@@ -1,0 +1,20 @@
+# Paths are relative to both this repository and ~/.kit.
+agents/ard-expert.md
+agents/code-reviewer.md
+agents/designer.md
+agents/librarian.md
+plugins/autoresearch
+plugins/git
+plugins/tool-approval
+prompts/adr.md
+prompts/init-adrs.md
+skills/aside-browser
+skills/autoresearch-create
+skills/autoresearch-finalize
+skills/autoresearch-hooks
+skills/glimpse-visuals
+skills/vaxis-ui
+skills/vercel-composition-patterns
+skills/vercel-react-best-practices
+skills/vercel-react-view-transitions
+skills/web-design-guidelines

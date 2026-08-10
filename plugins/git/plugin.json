@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/akonwi/kit/main/app/docs/plugin-protocol/manifest.schema.json",
+  "manifestVersion": 1,
+  "id": "git",
+  "name": "Git status",
+  "transport": {
+    "type": "stdio",
+    "command": "bun",
+    "args": ["plugin.ts"]
+  }
+}
