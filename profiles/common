@@ -4,7 +4,6 @@ agents/code-reviewer.md
 agents/designer.md
 agents/librarian.md
 plugins/autoresearch
-plugins/gdrive
 plugins/git
 plugins/tool-approval
 prompts/adr.md
@@ -14,6 +13,7 @@ skills/autoresearch-create
 skills/autoresearch-finalize
 skills/autoresearch-hooks
 skills/glimpse-visuals
+skills/monologue
 skills/vaxis-ui
 skills/vercel-composition-patterns
 skills/vercel-react-best-practices
