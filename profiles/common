@@ -4,6 +4,7 @@ agents/code-reviewer.md
 agents/designer.md
 agents/librarian.md
 plugins/autoresearch
+plugins/gdrive
 plugins/git
 plugins/tool-approval
 prompts/adr.md

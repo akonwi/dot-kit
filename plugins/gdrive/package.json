@@ -1,0 +1,12 @@
+{
+  "name": "kit-gdrive-plugin",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun build plugin.ts --target=bun --format=esm --outfile dist/plugin.js"
+  },
+  "dependencies": {
+    "googleapis": "148.0.0",
+    "jsonpath-plus": "10.4.0"
+  }
+}
