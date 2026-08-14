@@ -113,6 +113,10 @@ type ToolInput = {
 	group?: "immediate" | "this_week";
 	due_at?: string;
 	parent_id?: string;
+	// Set by cowork's own extraction pipeline when it prompts a headless
+	// session to add items directly via this tool (cowork's ADR 0013) —
+	// not something an interactive user would normally set themselves.
+	source_meeting?: string;
 };
 
 function textResult(text: string, details: unknown = null) {
@@ -143,7 +147,7 @@ function executeTool(input: ToolInput) {
 				text: input.text,
 				group: input.group ?? "this_week",
 				parent_id: input.parent_id ?? "",
-				source_meeting: "",
+				source_meeting: input.source_meeting ?? "",
 				created_at: now,
 				completed_at: "",
 				due_at: input.due_at ?? "",
@@ -287,6 +291,7 @@ class Endpoint {
 						group: { type: "string", enum: ["immediate", "this_week"], description: "immediate = blocking or due very soon; this_week = everything else open-ended. Defaults to this_week on add." },
 						due_at: { type: "string", description: "Explicit deadline as YYYY-MM-DD. Leave unset unless the user actually stated one — cowork falls back to a sensible default based on group." },
 						parent_id: { type: "string", description: "Id of a parent item, to add/edit this as a nested sub-task. Leave unset for a top-level item." },
+						source_meeting: { type: "string", description: "Internal: the source meeting's id, when this item is being added on behalf of an automated extraction pass rather than direct conversation. Leave unset otherwise." },
 					},
 					required: ["action"],
 					additionalProperties: false,
