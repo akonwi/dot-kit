@@ -8,7 +8,14 @@ Portable Kit configuration installed through entry-level symlinks.
 ./install.sh common
 ```
 
-`install.sh` links each entry named by a profile into `~/.kit`. Category
+`install.sh` links each entry named by a profile into `~/.kit`. Arguments can
+also be individual entry paths instead of profile names:
+
+```sh
+./install.sh skills/monologue prompts/adr.md
+```
+
+Category
 directories such as `~/.kit/plugins` remain real directories, so local files
 and machine-specific plugins can live beside the portable links.
 
@@ -21,6 +28,7 @@ Remove links installed by one or more profiles:
 
 ```sh
 ./uninstall.sh common
+./uninstall.sh skills/monologue
 ```
 
 The uninstaller removes only symlinks that point into this repository. It

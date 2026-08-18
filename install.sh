@@ -5,7 +5,9 @@ repo=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 kit_root=${KIT_HOME:-"$HOME/.kit"}
 
 if (($# == 0)); then
-  echo "usage: $0 <profile> [profile ...]" >&2
+  echo "usage: $0 <profile-or-entry> [profile-or-entry ...]" >&2
+  echo "  profile: a name from profiles/ (e.g. common)" >&2
+  echo "  entry:   a repo path (e.g. skills/monologue, prompts/adr.md)" >&2
   exit 2
 fi
 
@@ -39,15 +41,19 @@ install_entry() {
   echo "linked  $entry"
 }
 
-for profile in "$@"; do
-  profile_file="$repo/profiles/$profile"
-  if [[ ! -f "$profile_file" ]]; then
-    echo "unknown profile: $profile" >&2
+for arg in "$@"; do
+  arg=${arg%/}
+  profile_file="$repo/profiles/$arg"
+
+  if [[ -f "$profile_file" ]]; then
+    while IFS= read -r entry || [[ -n "$entry" ]]; do
+      [[ -z "$entry" || "$entry" == \#* ]] && continue
+      install_entry "$entry"
+    done < "$profile_file"
+  elif [[ -e "$repo/$arg" ]]; then
+    install_entry "$arg"
+  else
+    echo "unknown profile or entry: $arg" >&2
     exit 2
   fi
-
-  while IFS= read -r entry || [[ -n "$entry" ]]; do
-    [[ -z "$entry" || "$entry" == \#* ]] && continue
-    install_entry "$entry"
-  done < "$profile_file"
 done
