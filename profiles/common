@@ -7,12 +7,14 @@ plugins/autoresearch
 plugins/git
 plugins/tool-approval
 prompts/adr.md
+prompts/archive.md
 prompts/init-adrs.md
 skills/aside-browser
 skills/autoresearch-create
 skills/autoresearch-finalize
 skills/autoresearch-hooks
 skills/glimpse-visuals
+skills/knowledge-base
 skills/terminal-browser
 skills/monologue
 skills/vaxis-ui
