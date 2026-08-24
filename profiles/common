@@ -1,8 +1,10 @@
 # Paths are relative to both this repository and ~/.kit.
 agents/ard-expert.md
+agents/brain.md
 agents/code-reviewer.md
 agents/designer.md
 agents/librarian.md
+agents/user-tester.md
 plugins/autoresearch
 plugins/cowork
 plugins/git
@@ -14,12 +16,16 @@ skills/browser-use
 skills/autoresearch-create
 skills/autoresearch-finalize
 skills/autoresearch-hooks
+skills/figma
 skills/glimpse-visuals
 skills/knowledge-base
+skills/meetings
 skills/terminal-browser
-skills/monologue
+skills/user-tester
 skills/vaxis-ui
 skills/vercel-composition-patterns
 skills/vercel-react-best-practices
 skills/vercel-react-view-transitions
 skills/web-design-guidelines
+themes/cartwheel.json
+themes/cartwheel-dark.json

@@ -20,7 +20,10 @@ Areas of expertise:
 Provide clear, actionable recommendations. Reference specific components, patterns,
 or design principles when relevant. Prefer concrete examples over abstract advice.
 
+Figma design work:
+- When asked to inspect, interpret, compare, or implement a Figma design, activate the `figma` skill first and follow its MCP-based design-handoff workflow.
+
 Presenting visual work:
-- When asked for mockups or any visual artifact, activate the 'glimpse-visuals'
+- When asked for mockups or any visual artifact, activate the `glimpse-visuals`
   skill and present the work in a native glimpse window rather than only
   describing it or dumping HTML in chat.

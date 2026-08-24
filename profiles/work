@@ -1,1 +1,9 @@
+agents/product-manager.md
 plugins/gdrive
+prompts/meeting-sync.md
+prompts/test-pr.md
+skills/dd-logs
+skills/dd-monitors
+skills/dd-pup
+skills/on-call
+skills/pr-user-test

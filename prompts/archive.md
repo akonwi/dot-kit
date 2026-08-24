@@ -9,10 +9,10 @@ If no focus was supplied, infer the project and topic from the session.
 
 ## 1. Resolve the archive collection
 
-The default work-journal collection is `Coding sessions`. Resolve its configured root instead of assuming a directory:
+The work-journal collection is `journal`. Resolve its configured root instead of assuming a directory:
 
 ```sh
-kb collection show "Coding sessions" --json
+kb collection show journal --json
 ```
 
 If the collection is missing, stop and ask where the archive should live rather than inventing or silently creating a collection.
@@ -33,7 +33,7 @@ Do not claim work that was merely proposed. Distinguish committed work from unco
 
 ## 3. Find an existing entry
 
-Before writing, search `Coding sessions` for the project, topic, date, and distinctive decisions. Also inspect likely files under the configured root.
+Before writing, search `journal` for the project, topic, date, and distinctive decisions. Also inspect likely files under the configured root.
 
 - Update an existing entry when it clearly represents the same work thread/session.
 - Otherwise create `YYYY-MM-DD-<project-or-topic>.md`.
@@ -79,8 +79,8 @@ Never archive:
 After writing or updating the entry:
 
 ```sh
-kb update "Coding sessions"
-kb search "distinctive verification terms" --collection "Coding sessions" --limit 5
+kb update journal
+kb search "distinctive verification terms" --collection journal --limit 5
 ```
 
 Confirm that the intended virtual path is returned. If indexing fails, preserve the Markdown file, report the error, and do not claim archival succeeded.
