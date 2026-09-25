@@ -3,16 +3,12 @@ import { createInterface } from "node:readline";
 
 const REFRESH_MS = 60_000;
 const COMMAND_TIMEOUT_MS = 8_000;
-const MIDDLE_DOT = "·";
-const LOCATION_ID = "location";
-const BUILT_IN_LOCATION_ID = "kit.footer.location";
+const CI_ID = "ci";
 const MAX_FRAME_BYTES = 16 * 1024 * 1024;
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 type RpcId = string | number;
 type GitInfo = { branch: string | null; dirty: boolean };
-type GitContext = { root: string; branch: string | null; dirty: boolean } | null;
-type PullRequestInfo = { number: number; url: string };
 type CheckBucket = "pass" | "fail" | "pending" | "skipping" | "cancel";
 type CheckSummary = {
 	state: CheckBucket | "unknown";
@@ -38,7 +34,6 @@ class Endpoint {
 	private stopping = false;
 	private cwd = process.cwd();
 	private git: GitInfo = { branch: null, dirty: false };
-	private pullRequest: PullRequestInfo | null = null;
 	private checks: CheckSummary | null = null;
 	private generation = 0;
 	private refreshTimer: ReturnType<typeof setInterval> | null = null;
@@ -115,11 +110,6 @@ class Endpoint {
 				setTimeout(() => void this.initializeContributions(), 0);
 				return { protocolVersion: 1 };
 			}
-			case "kit/footer/click":
-				if (params.id === LOCATION_ID && this.pullRequest) {
-					await this.request("kit/system/open-url", { url: this.pullRequest.url });
-				}
-				return null;
 			case "shutdown":
 				this.stop();
 				return null;
@@ -134,80 +124,72 @@ class Endpoint {
 			case "kit/events/project.changed":
 				if (typeof params.cwd === "string") this.cwd = params.cwd;
 				this.git = gitInfoFromContext(params.git);
-				this.pullRequest = null;
 				this.checks = null;
-				void this.refresh(this.git);
+				void this.refreshSafely(this.git);
 				break;
 			case "kit/events/git.changed":
 				this.git = gitInfoFromContext(params.git);
-				void this.refresh(this.git);
+				void this.refreshSafely(this.git);
 				break;
 		}
 	}
 
 	private async initializeContributions(): Promise<void> {
+		await this.refreshSafely(this.git);
+		if (!this.stopping) {
+			this.refreshTimer = setInterval(() => void this.refreshSafely(), REFRESH_MS);
+		}
+	}
+
+	private async refreshSafely(nextGit?: GitInfo): Promise<void> {
 		try {
-			await this.request("kit/footer/hide", { id: BUILT_IN_LOCATION_ID });
-			await this.refresh(this.git);
-			this.refreshTimer = setInterval(() => void this.refresh(), REFRESH_MS);
+			await this.refresh(nextGit);
 		} catch (error) {
-			console.error("Could not initialize Git footer:", error);
+			if (!this.stopping) console.error("Could not refresh CI status:", error);
 		}
 	}
 
 	private async refresh(nextGit?: GitInfo): Promise<void> {
 		const currentGeneration = ++this.generation;
-		this.git = nextGit ?? (await this.getGitInfo());
-		if (this.stopping || currentGeneration !== this.generation) return;
-
-		if (!isNamedBranch(this.git.branch)) {
-			this.pullRequest = null;
+		const cwd = this.cwd;
+		// Drop stale status immediately when the host reports a project/Git change.
+		if (nextGit) {
 			this.checks = null;
 			await this.render();
-			return;
 		}
-
-		await this.render();
-		const pullRequest = await this.getPullRequestInfo();
 		if (this.stopping || currentGeneration !== this.generation) return;
-		this.pullRequest = pullRequest;
-		this.checks = pullRequest ? await this.getCheckSummary() : null;
+		const git = nextGit ?? (await this.getGitInfo(cwd));
 		if (this.stopping || currentGeneration !== this.generation) return;
+		const checks = isNamedBranch(git.branch) ? await this.getCheckSummary(cwd) : null;
+		if (this.stopping || currentGeneration !== this.generation) return;
+		this.git = git;
+		this.checks = checks;
 		await this.render();
 	}
 
 	private async render(): Promise<void> {
 		if (this.stopping) return;
+		if (!this.checks) {
+			await this.request("kit/footer/clear", { id: CI_ID });
+			return;
+		}
 		await this.request("kit/footer/set", {
-			id: LOCATION_ID,
-			content: formatLocation(this.cwd, this.git, this.pullRequest, this.checks),
+			id: CI_ID,
+			content: [{ text: formatCheckSummary(this.checks), style: { fg: checkToken(this.checks) } }],
 			side: "right",
-			clickable: this.pullRequest !== null,
 		});
 	}
 
-	private async getGitInfo(): Promise<GitInfo> {
-		const result = await this.runCommand("git", ["status", "--porcelain=2", "--branch"]);
+	private async getGitInfo(cwd: string): Promise<GitInfo> {
+		const result = await this.runCommand("git", ["status", "--porcelain=2", "--branch"], cwd);
 		if (result.status !== 0) return { branch: null, dirty: false };
 		return parseGitStatus(result.stdout);
 	}
 
-	private async getPullRequestInfo(): Promise<PullRequestInfo | null> {
-		const result = await this.runCommand("gh", ["pr", "view", "--json", "number,url"]);
-		if (result.status !== 0 || !result.stdout.trim()) return null;
-		try {
-			const data = JSON.parse(result.stdout);
-			return typeof data.number === "number" && typeof data.url === "string"
-				? { number: data.number, url: data.url }
-				: null;
-		} catch {
-			return null;
-		}
-	}
-
-	private async getCheckSummary(): Promise<CheckSummary | null> {
-		const result = await this.runCommand("gh", ["pr", "checks", "--json", "bucket"]);
-		if (!result.stdout.trim()) return null;
+	private async getCheckSummary(cwd: string): Promise<CheckSummary | null> {
+		const result = await this.runCommand("gh", ["pr", "checks", "--json", "bucket"], cwd);
+		// gh exits 1 for failed checks and 8 for pending checks; both carry usable JSON.
+		if (result.timedOut || ![0, 1, 8].includes(result.status ?? -1) || !result.stdout.trim()) return null;
 		try {
 			const checks = JSON.parse(result.stdout) as Array<{ bucket?: string }>;
 			if (!Array.isArray(checks)) return null;
@@ -228,10 +210,10 @@ class Endpoint {
 		}
 	}
 
-	private runCommand(command: string, args: string[]): Promise<CommandResult> {
+	private runCommand(command: string, args: string[], cwd: string): Promise<CommandResult> {
 		return new Promise((resolve) => {
 			const child = spawn(command, args, {
-				cwd: this.cwd,
+				cwd,
 				env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
 				stdio: ["ignore", "pipe", "pipe"],
 			});
@@ -359,24 +341,6 @@ function checkToken(summary: CheckSummary | null): string {
 		case "pending": return "warningText";
 		default: return "textMuted";
 	}
-}
-
-function formatLocation(
-	cwd: string,
-	git: GitInfo,
-	pullRequest: PullRequestInfo | null,
-	checks: CheckSummary | null,
-): Json[] {
-	if (!git.branch) return [{ text: cwd }];
-	const content: Json[] = [{ text: `${cwd} (${git.branch}${git.dirty ? "*" : ""}` }];
-	if (pullRequest) {
-		content.push(
-			{ text: ` ${MIDDLE_DOT} PR #${pullRequest.number} ${MIDDLE_DOT} ` },
-			{ text: formatCheckSummary(checks), style: { fg: checkToken(checks) } },
-		);
-	}
-	content.push({ text: ")" });
-	return content;
 }
 
 new Endpoint().start();
