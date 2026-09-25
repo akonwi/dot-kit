@@ -974,14 +974,6 @@ function AutoResearchPlugin(kit: PluginAPI) {
 		}, SETTLED_WINDOW_MS);
 	}
 
-	kit.addSystemPrompt([
-		"Autoresearch tools may be available: autoresearch__init_experiment, autoresearch__run_experiment, autoresearch__log_experiment.",
-		"Use them only when the user starts or resumes autoresearch, or when autoresearch.md/autoresearch.jsonl clearly indicate an active session.",
-		"In autoresearch mode, optimize the primary metric through an autonomous experiment loop: edit, autoresearch__run_experiment, autoresearch__log_experiment, keep or discard, repeat until interrupted or maxIterations is reached.",
-		"Use autoresearch.md as the durable session rules and update it periodically. Use autoresearch.ideas.md for promising deferred ideas.",
-		BENCHMARK_GUARDRAIL,
-	].join("\n"));
-
 	kit.registerCommand(
 		"autoresearch",
 		{ description: "Start, stop, clear, or resume autoresearch mode", argName: "off|clear|goal" },

@@ -167,7 +167,6 @@ export function runPlugin(initializePlugin: (kit: PluginAPI) => void | Disposer)
 	const kit: any = {
 		system: {
 			get cwd() { return context.project.cwd; },
-			open: (url: string | URL) => rpc.request("kit/system/open-url", { url: String(url) }),
 		},
 		session: {
 			get: () => ({ ...context.session, cwd: context.project.cwd }),
@@ -182,7 +181,6 @@ export function runPlugin(initializePlugin: (kit: PluginAPI) => void | Disposer)
 			set: (id: string, content: any, options: any = {}) => requestQuietly("kit/footer/set", { id, content: segments(content), side: options.side ?? "right", clickable: Boolean(options.onClick) }),
 			clear: (id: string) => requestQuietly("kit/footer/clear", { id }),
 		},
-		addSystemPrompt: (text: string) => requestQuietly("kit/system-prompt/set", { text }),
 		registerCommand: (id: string, options: any, handler: any) => {
 			commandHandlers.set(id, handler);
 			requestQuietly("kit/commands/register", { id, description: options.description, argName: options.argName ?? null, category: options.category ?? null });

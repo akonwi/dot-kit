@@ -1,7 +1,7 @@
 ---
 name: autoresearch-finalize
 context: fork
-description: Finalize an autoresearch session into clean, reviewable branches. Use when asked to "finalize autoresearch", "clean up experiments", or "prepare autoresearch for review".
+description: Finalize an autoresearch session into clean, reviewable branches and archive its experiments and outcomes in the local knowledge base. Use when asked to "finalize autoresearch", "clean up experiments", or "prepare autoresearch for review".
 ---
 
 # Finalize Autoresearch
@@ -74,11 +74,31 @@ The script creates one branch per group from the merge-base, verifies the union 
 On creation failure: rolls back (deletes branches, restores original branch, pops stash).
 On verification failure: exits non-zero but leaves branches intact for inspection.
 
-## Step 3 — Report
+## Step 3 — Archive the Session in `kb`
 
-After the script finishes, report to the user:
+After branch creation and verification succeed, preserve the complete experiment record as a synthesized Markdown entry in the local knowledge base.
+
+1. Activate the `knowledge-base` skill and read `~/.kit/prompts/archive.md`. Follow its rules for CLI availability, resolving the `Coding sessions` collection root, finding an existing entry, safe content, indexing, and search verification.
+2. Search `Coding sessions` for the repository, autoresearch goal, date, and metric before choosing whether to create or update an entry.
+3. Archive the autoresearch session as `YYYY-MM-DD-<project>-autoresearch-<goal>.md`, adding a distinguishing suffix only when that filename belongs to a different work thread.
+4. Include concise frontmatter with `date`, `project`, absolute `repository`, `status: finalized`, and tags for `kit-session` and `autoresearch`.
+5. Synthesize these sections from `autoresearch.md`, `autoresearch.jsonl`, `autoresearch.ideas.md`, `/tmp/groups.json`, and the finalize script output:
+   - objective, primary metric, unit, and optimization direction;
+   - baseline, best result, and overall percentage improvement;
+   - an experiment table containing every logged run—not only kept runs—with run number, status, commit, primary metric, secondary metrics, and description;
+   - grouped changes and the review branches created;
+   - durable learnings from descriptions and ASI, including failed hypotheses when they prevent repeated work;
+   - deferred ideas, validation performed, cleanup commands, and unresolved issues.
+6. Do not copy raw JSONL wholesale. Preserve useful experiment evidence while omitting noisy operational fields, credentials, hidden reasoning, and irrelevant command output.
+7. Run `kb update "Coding sessions"`, then verify the entry with a focused `kb search` query. If writing or indexing fails, keep the finalized branches intact, report the archive failure, and do not claim the session is available in the knowledge base.
+
+## Step 4 — Report
+
+After the script and archive workflow finish, report to the user:
 - Branches created and what each contains
 - Overall metric improvement (baseline → best)
+- The archive's absolute path and `Coding sessions/<relative-path>` virtual path
+- Whether `kb update` and focused search verification succeeded
 - Show the cleanup commands from the script's summary output
 
 ## Edge Cases
