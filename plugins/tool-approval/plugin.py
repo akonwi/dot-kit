@@ -9,7 +9,11 @@ import threading
 from pathlib import Path
 
 MAX_FRAME_BYTES = 16 * 1024 * 1024
-RISKY_PATTERNS = (r"\bgit\s+commit\b", r"\bnpm\s+publish\b")
+RISKY_PATTERNS = (
+    r"\bgit\s+commit\b",
+    r"\bnpm\s+publish\b",
+    r"\btailscale\b",
+)
 TOGGLE_COMMAND_ID = "toggle-tool-approval"
 CONFIG_PATH = Path(__file__).with_name("config.json")
 

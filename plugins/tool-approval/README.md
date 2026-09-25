@@ -20,4 +20,4 @@ Run `/toggle-tool-approval`. The plugin updates `config.json` and shows the resu
 
 Paths are resolved to canonical absolute paths when the plugin loads. After editing the file manually, run `/reload`.
 
-The current risky command patterns are `git commit` and `npm publish`.
+The current risky command patterns are `git commit`, `npm publish`, and any `tailscale` command.
