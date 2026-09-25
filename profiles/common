@@ -9,7 +9,7 @@ plugins/tool-approval
 prompts/adr.md
 prompts/archive.md
 prompts/init-adrs.md
-skills/aside-browser
+skills/browser-use
 skills/autoresearch-create
 skills/autoresearch-finalize
 skills/autoresearch-hooks

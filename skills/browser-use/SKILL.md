@@ -1,6 +1,6 @@
 ---
-name: aside-browser
-description: Read when you need a browser automation (QA, element interaction, screencapture/snapshot, network capture, so on), or have to work across user's logged-in accounts, apps (e.g. Slack, X, LinkedIn, etc.), memory, and browsing history.
+name: browser-use
+description: Read when you need a browser automation (QA, element interaction, screencapture/snapshot, network capture, so on), or have to work across user's logged-in accounts, and apps (e.g. Slack, X, LinkedIn, etc.).
 ---
 
 # Aside Browser
