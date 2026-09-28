@@ -699116,7 +699116,7 @@ var init_index_node_esm = __esm(() => {
   JSONPath.prototype.vm = vm;
 });
 
-// ../_shared/rpc.ts
+// ../../../../.kit/plugins/_shared/rpc.ts
 import { createInterface } from "readline";
 var MAX_FRAME_BYTES = 16 * 1024 * 1024;
 
@@ -699288,7 +699288,7 @@ class KitPluginEndpoint {
 
 // plugin.ts
 var import_googleapis = __toESM(require_src8(), 1);
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 var KEYCHAIN_CLIENT_ID = "pi-gdrive";
 var KEYCHAIN_CLIENT_SECRET = "pi-gdrive-client-secret";
 var KEYCHAIN_REFRESH_TOKEN = "pi-gdrive-refresh-token";
@@ -699298,12 +699298,21 @@ var OAUTH_SCOPES = [
   "https://www.googleapis.com/auth/documents"
 ];
 function keychainGet(service) {
-  return execSync(`security find-generic-password -s "${service}" -w`, {
-    encoding: "utf-8"
-  }).trim();
+  return execFileSync("security", ["find-generic-password", "-s", service, "-w"], { encoding: "utf-8" }).trim();
 }
 function keychainSet(service, value) {
-  execSync(`security add-generic-password -a "pi-gdrive" -s "${service}" -D "pi-gdrive-credential" -w "${value}" -U`, { encoding: "utf-8" });
+  execFileSync("security", [
+    "add-generic-password",
+    "-a",
+    "pi-gdrive",
+    "-s",
+    service,
+    "-D",
+    "pi-gdrive-credential",
+    "-w",
+    value,
+    "-U"
+  ], { encoding: "utf-8" });
 }
 function hasKeychainCreds() {
   try {
@@ -699338,7 +699347,7 @@ async function runOAuthFlow(clientId, clientSecret) {
     scope: OAUTH_SCOPES,
     prompt: "consent"
   });
-  execSync(`open "${authUrl}"`);
+  execFileSync("open", [authUrl]);
   const code = await new Promise((resolve, reject) => {
     const server = http.createServer((req, res) => {
       if (req.url?.includes("/oauth2callback")) {

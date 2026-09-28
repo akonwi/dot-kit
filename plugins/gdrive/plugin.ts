@@ -5,7 +5,7 @@ import { KitPluginEndpoint } from "../_shared/rpc";
 import { google } from "googleapis";
 import type { OAuth2Client } from "google-auth-library";
 import type { docs_v1 } from "googleapis";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 
 // ── Auth ──────────────────────────────────────────────────────────────
 
@@ -19,14 +19,28 @@ const OAUTH_SCOPES = [
 ];
 
 function keychainGet(service: string): string {
-	return execSync(`security find-generic-password -s "${service}" -w`, {
-		encoding: "utf-8",
-	}).trim();
+	return execFileSync(
+		"security",
+		["find-generic-password", "-s", service, "-w"],
+		{ encoding: "utf-8" },
+	).trim();
 }
 
 function keychainSet(service: string, value: string): void {
-	execSync(
-		`security add-generic-password -a "pi-gdrive" -s "${service}" -D "pi-gdrive-credential" -w "${value}" -U`,
+	execFileSync(
+		"security",
+		[
+			"add-generic-password",
+			"-a",
+			"pi-gdrive",
+			"-s",
+			service,
+			"-D",
+			"pi-gdrive-credential",
+			"-w",
+			value,
+			"-U",
+		],
 		{ encoding: "utf-8" },
 	);
 }
@@ -80,7 +94,7 @@ async function runOAuthFlow(
 		prompt: "consent",
 	});
 
-	execSync(`open "${authUrl}"`);
+	execFileSync("open", [authUrl]);
 
 	const code = await new Promise<string>((resolve, reject) => {
 		const server = http.createServer((req, res) => {
