@@ -4,15 +4,13 @@ import * as fs from "node:fs";
 import { createWriteStream } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
-import { Type, type PluginAPI, type ToolResult, runPlugin } from "./host";
+import { Type, type PluginAPI, type ToolResult, isSessionBusy, runPlugin } from "./host";
 
 const EXPERIMENT_MAX_LINES = 10;
 const EXPERIMENT_MAX_BYTES = 4 * 1024;
 const CHECKS_MAX_LINES = 80;
 const HOOK_TIMEOUT_MS = 30_000;
 const HOOK_STDOUT_MAX_BYTES = 8 * 1024;
-const MAX_AUTORESUME_TURNS = 20;
-const SETTLED_WINDOW_MS = 800;
 const BENCHMARK_GUARDRAIL =
 	"Be careful not to overfit to the benchmarks and do not cheat on the benchmarks.";
 const METRIC_LINE_PREFIX = "METRIC";
@@ -130,13 +128,12 @@ type GlimpseView = {
 type AutoresearchRuntime = {
 	autoresearchMode: boolean;
 	experimentsThisSession: number;
-	autoResumeTurns: number;
 	lastRunChecks: { pass: boolean; output: string; duration: number } | null;
 	lastRunDuration: number | null;
 	runningExperiment: { startedAt: number; command: string } | null;
 	state: ExperimentState;
-	pendingResumeTimer: ReturnType<typeof setTimeout> | null;
-	pendingResumeMessage: string | null;
+	/** A kickoff rejected while the session was busy, submitted when the turn completes. */
+	pendingKickoff: string | null;
 	glimpse: GlimpseState;
 };
 
@@ -211,13 +208,11 @@ function createRuntime(): AutoresearchRuntime {
 	return {
 		autoresearchMode: false,
 		experimentsThisSession: 0,
-		autoResumeTurns: 0,
 		lastRunChecks: null,
 		lastRunDuration: null,
 		runningExperiment: null,
 		state: createExperimentState(),
-		pendingResumeTimer: null,
-		pendingResumeMessage: null,
+		pendingKickoff: null,
 		glimpse: { windowName: null, windowOpen: false, lastUpdateAt: 0, busy: false },
 	};
 }
@@ -900,10 +895,6 @@ function composeResumeMessage(): string {
 	].join(" ");
 }
 
-function hasReachedAutoResumeLimit(runtime: AutoresearchRuntime): boolean {
-	return runtime.autoResumeTurns >= MAX_AUTORESUME_TURNS;
-}
-
 function AutoResearchPlugin(kit: PluginAPI) {
 	const runtimes = new Map<string, AutoresearchRuntime>();
 	let glimpseMissingToastShown = false;
@@ -946,32 +937,30 @@ function AutoResearchPlugin(kit: PluginAPI) {
 		updateFooter(kit, runtime);
 	}
 
-	function cancelPendingResume(runtime: AutoresearchRuntime): void {
-		if (runtime.pendingResumeTimer) clearTimeout(runtime.pendingResumeTimer);
-		runtime.pendingResumeTimer = null;
-		runtime.pendingResumeMessage = null;
+	function warnSubmissionFailed(error: unknown): void {
+		kit.ui.toast({
+			title: "Autoresearch could not continue",
+			subtitle: error instanceof Error ? error.message : String(error),
+			variant: "warning",
+		});
 	}
 
-	function scheduleResume(runtime: AutoresearchRuntime, message = composeResumeMessage()): void {
-		if (!runtime.autoresearchMode || hasReachedAutoResumeLimit(runtime)) return;
-		cancelPendingResume(runtime);
-		runtime.pendingResumeMessage = message;
-		runtime.pendingResumeTimer = setTimeout(() => {
-			if (!runtime.autoresearchMode || !runtime.pendingResumeMessage) return;
-			if (hasReachedAutoResumeLimit(runtime)) {
-				cancelPendingResume(runtime);
-				kit.ui.toast({
-					title: "Autoresearch paused",
-					subtitle: `Auto-resume limit reached (${MAX_AUTORESUME_TURNS} turns).`,
-					variant: "info",
-				});
-				return;
-			}
-			const pending = runtime.pendingResumeMessage;
-			cancelPendingResume(runtime);
-			runtime.autoResumeTurns += 1;
-			void kit.session.submitMessage(pending);
-		}, SETTLED_WINDOW_MS);
+	// Kit admits a message only when the session is idle. A busy rejection means
+	// the user or queued input took over; the next completed turn tries again.
+	function continueLoop(runtime: AutoresearchRuntime, completedTurnId: string): void {
+		if (!runtime.autoresearchMode) return;
+		const kickoff = runtime.pendingKickoff;
+		const message = kickoff ?? composeResumeMessage();
+		// Keyed by the completed turn so a repeated completion cannot resume twice.
+		const idempotencyKey = `autoresearch-${kickoff ? "kickoff" : "resume"}-${completedTurnId}`;
+		kit.session.submitMessage(message, { idempotencyKey }).then(
+			() => {
+				if (runtime.pendingKickoff === kickoff) runtime.pendingKickoff = null;
+			},
+			(error: unknown) => {
+				if (!isSessionBusy(error)) warnSubmissionFailed(error);
+			},
+		);
 	}
 
 	kit.registerCommand(
@@ -989,12 +978,11 @@ function AutoResearchPlugin(kit: PluginAPI) {
 
 			if (command === "off") {
 				runtime.autoresearchMode = false;
-				runtime.autoResumeTurns = 0;
 				runtime.experimentsThisSession = 0;
 				runtime.lastRunChecks = null;
 				runtime.lastRunDuration = null;
 				runtime.runningExperiment = null;
-				cancelPendingResume(runtime);
+				runtime.pendingKickoff = null;
 				updateFooter(kit, runtime);
 				if (runtime.state.results.length > 0) {
 					// Leave the window up showing the finalized report.
@@ -1015,13 +1003,12 @@ function AutoResearchPlugin(kit: PluginAPI) {
 				const workDir = resolveWorkDir(ctx.system.cwd);
 				const jsonlPath = autoresearchJsonlPath(workDir);
 				runtime.autoresearchMode = false;
-				runtime.autoResumeTurns = 0;
 				runtime.experimentsThisSession = 0;
 				runtime.lastRunChecks = null;
 				runtime.lastRunDuration = null;
 				runtime.runningExperiment = null;
 				runtime.state = createExperimentState();
-				cancelPendingResume(runtime);
+				runtime.pendingKickoff = null;
 				if (fs.existsSync(jsonlPath)) fs.unlinkSync(jsonlPath);
 				updateFooter(kit, runtime);
 				void glimpseClose(runtime.glimpse, workDir);
@@ -1031,7 +1018,7 @@ function AutoResearchPlugin(kit: PluginAPI) {
 
 			reconstructRuntime(runtime, ctx.system.cwd);
 			runtime.autoresearchMode = true;
-			runtime.autoResumeTurns = 0;
+			runtime.pendingKickoff = null;
 			const workDir = resolveWorkDir(ctx.system.cwd);
 			const rulesLoaded = fs.existsSync(autoresearchMdPath(workDir));
 			const activationSteer = await runHook({
@@ -1054,7 +1041,22 @@ function AutoResearchPlugin(kit: PluginAPI) {
 				subtitle: rulesLoaded ? "Resuming from autoresearch.md." : "No autoresearch.md found; setting up.",
 				variant: "info",
 			});
-			await ctx.session.submitMessage(activationSteer ? `${activationSteer}\n\n${kickoff}` : kickoff);
+			const message = activationSteer ? `${activationSteer}\n\n${kickoff}` : kickoff;
+			try {
+				await ctx.session.submitMessage(message);
+			} catch (error) {
+				if (!isSessionBusy(error)) {
+					warnSubmissionFailed(error);
+					return;
+				}
+				// The session is running a turn; start when it completes.
+				runtime.pendingKickoff = message;
+				ctx.ui.toast({
+					title: "Autoresearch queued",
+					subtitle: "It will start when the current turn finishes.",
+					variant: "info",
+				});
+			}
 		},
 	);
 
@@ -1412,16 +1414,15 @@ function AutoResearchPlugin(kit: PluginAPI) {
 		reconstructRuntime(runtime, ctx.system.cwd);
 	});
 
-	kit.on("agent.turn.completed", (_event, ctx) => {
+	kit.on("agent.turn.completed", (event, ctx) => {
 		const runtime = runtimeForSession(ctx.session.get().id);
 		runtime.runningExperiment = null;
 		updateFooter(kit, runtime);
-		if (runtime.autoresearchMode && runtime.experimentsThisSession > 0) scheduleResume(runtime);
+		if (runtime.pendingKickoff || runtime.experimentsThisSession > 0) continueLoop(runtime, event.turn.id);
 	});
 
 	return () => {
 		for (const runtime of runtimes.values()) {
-			cancelPendingResume(runtime);
 			void glimpseClose(runtime.glimpse, kit.system.cwd);
 		}
 		kit.footer.clear("status");

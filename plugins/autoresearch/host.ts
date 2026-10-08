@@ -45,6 +45,24 @@ export type ToolResult<T = unknown> = {
 };
 export type PluginAPI = any;
 
+/** A JSON-RPC error response from Kit, preserving its stable code. */
+export class RpcError extends Error {
+	constructor(readonly code: number, message: string, readonly data?: unknown) {
+		super(message);
+		this.name = "RpcError";
+	}
+}
+
+/** Kit rejected a session message because the session cannot start a turn now. */
+export const SESSION_BUSY = -32006;
+
+export function isSessionBusy(error: unknown): boolean {
+	return error instanceof RpcError && error.code === SESSION_BUSY;
+}
+
+/** Result of an admitted session message. */
+export type SubmittedMessage = { messageId: string; turnId: string };
+
 class RpcPeer {
 	private nextId = 1;
 	private pending = new Map<RpcId, { resolve: (value: any) => void; reject: (error: Error) => void }>();
@@ -94,7 +112,7 @@ class RpcPeer {
 			const pending = this.pending.get(message.id);
 			if (!pending) return;
 			this.pending.delete(message.id);
-			if (message.error) pending.reject(new Error(message.error.message ?? "JSON-RPC request failed"));
+			if (message.error) pending.reject(new RpcError(message.error.code, message.error.message ?? "JSON-RPC request failed", message.error.data));
 			else pending.resolve(message.result);
 			return;
 		}
@@ -170,7 +188,12 @@ export function runPlugin(initializePlugin: (kit: PluginAPI) => void | Disposer)
 		},
 		session: {
 			get: () => ({ ...context.session, cwd: context.project.cwd }),
-			submitMessage: (text: string) => rpc.request("kit/session/submit-message", { sessionId: context.session.id, text }),
+			// Starts a turn in this plugin's idle session; rejects with SESSION_BUSY otherwise.
+			submitMessage: (text: string, options: { idempotencyKey?: string } = {}): Promise<SubmittedMessage> =>
+				rpc.request("kit/session/submit-message", {
+					text,
+					...(options.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : {}),
+				}),
 		},
 		ui: {
 			theme: () => ({ tokens: new Proxy({}, { get: (_target, property) => property }) }),
