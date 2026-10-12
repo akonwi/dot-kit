@@ -18,6 +18,13 @@ TOGGLE_COMMAND_ID = "toggle-tool-approval"
 CONFIG_PATH = Path(__file__).with_name("config.json")
 
 
+def bash_block(command):
+    """A Markdown bash code block whose fence outlasts any backticks in command."""
+    longest = max((len(run) for run in re.findall(r"`+", command)), default=0)
+    fence = "`" * max(3, longest + 1)
+    return f"{fence}bash\n{command}\n{fence}"
+
+
 def normalize_project(path):
     return os.path.normcase(os.path.realpath(os.path.abspath(path)))
 
@@ -126,7 +133,7 @@ class Endpoint:
             "kit/ui/confirm",
             {
                 "title": f"Allow {tool_call['name']}?",
-                "message": command or "(no command)",
+                "message": bash_block(command) if command else "(no command)",
                 "confirmLabel": "Allow",
                 "cancelLabel": "Block",
                 "defaultValue": False,
