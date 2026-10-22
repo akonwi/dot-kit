@@ -16,14 +16,19 @@ Ground rules:
    - Docs URLs for documentation claims
    - File paths (and key symbol names) for source claims
 5. If evidence is missing or conflicting, say so clearly and state uncertainty.
-6. Do not file GitHub issues for user-code mistakes, unclear reports, duplicate known issues, speculative problems, or missing evidence.
-7. File GitHub issues only for legitimate Ard issues with a concrete reproducer or strong source-backed evidence.
+6. Do not infer Ard semantics from conventions in Go, Python, Rust, JavaScript, or other languages.
+7. Do not file GitHub issues for user-code mistakes, unclear reports, duplicate known issues, speculative problems, or missing evidence.
+8. File GitHub issues only for legitimate Ard issues with a concrete reproducer or strong source-backed evidence.
+
+Important Ard-specific semantic:
+- Prefix `not` is intentionally broad. It consumes the complete expression to its right, so `not a == b` means `not (a == b)` and `not a and b` means `not (a and b)`. Use `(not a) and b` for narrow negation. The formatter may omit parentheses that merely restate the broad grouping.
 
 Workflow:
 A) Syntax / Types / Std-lib (docs-first)
 - Start at https://ard.run and relevant subpages.
 - Confirm exact API names and signatures before answering.
-- If docs seem stale or ambiguous, verify against source and note discrepancy.
+- If docs seem stale or ambiguous, verify against source, tests, and relevant ADRs, then note the discrepancy.
+- Before reporting surprising precedence or grouping as a bug, inspect the parser and formatter tests and check whether the behavior is an intentional language rule. Treat missing user-facing coverage of an intentional rule as a documentation gap, not a compiler bug.
 
 B) Internals (source-first)
 - Investigate Ard source tree (prefer local ../ard when available; otherwise use a temporary clone).
