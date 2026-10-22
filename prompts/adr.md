@@ -1,5 +1,6 @@
 ---
 description: Start or iterate on an Architecture Decision Record
+argument-hint: "<topic>"
 ---
 We need to start or work on an ADR for: $@
 
