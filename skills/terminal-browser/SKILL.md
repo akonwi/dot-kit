@@ -34,8 +34,6 @@ This skill is intentionally narrow:
 - Do not use it for snapshots, DOM evaluation, clicks, form filling, or
   screenshots; use the `aside-browser` skill for browser automation and
   inspection.
-- Do not use it for interactive HTML mockups or collecting visual feedback;
-  use the `glimpse-visuals` skill instead.
 
 ## Requirements and failures
 
