@@ -13,6 +13,7 @@ prompts/adr.md
 prompts/archive.md
 prompts/init-adrs.md
 skills/browser-use
+skills/design-in-paper
 skills/autoresearch-create
 skills/autoresearch-finalize
 skills/autoresearch-hooks
@@ -21,6 +22,7 @@ skills/figma
 skills/knowledge-base
 skills/meetings
 skills/show-me
+skills/skill-authoring
 skills/user-tester
 skills/vaxis-ui
 skills/vercel-composition-patterns
