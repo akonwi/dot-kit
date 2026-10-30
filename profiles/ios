@@ -5,6 +5,7 @@ skills/ios-app-intents
 skills/ios-debugger-agent
 skills/ios-ettrace-performance
 skills/ios-memgraph-leaks
+skills/ios-simulator
 skills/ios-simulator-browser
 skills/swiftui-liquid-glass
 skills/swiftui-performance-audit
