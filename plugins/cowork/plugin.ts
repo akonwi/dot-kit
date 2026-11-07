@@ -194,7 +194,7 @@ function executeTool(input: ToolInput) {
 }
 
 // ── JSON-RPC 2.0 endpoint (self-contained, no shared dependency —
-//    matches this repo's plugins/git/plugin.ts convention) ───────────────
+//    the convention of this repo's plugins) ───────────────
 
 class Endpoint {
 	private nextId = 1;

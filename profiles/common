@@ -7,7 +7,6 @@ agents/librarian.md
 agents/user-tester.md
 plugins/autoresearch
 plugins/cowork
-plugins/git
 plugins/tool-approval
 prompts/adr.md
 prompts/archive.md
