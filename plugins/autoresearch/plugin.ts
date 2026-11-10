@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import { createWriteStream } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
-import { Type, type PluginAPI, type ToolResult, isSessionBusy, runPlugin } from "./host";
+import { type FooterSegment, isTryLater, type Kit, runPlugin, t, type ToolResult } from "./kit-plugin.ts";
 
 const EXPERIMENT_MAX_LINES = 10;
 const EXPERIMENT_MAX_BYTES = 4 * 1024;
@@ -21,57 +21,56 @@ const GLIMPSE_HEIGHT = 760;
 const GLIMPSE_LIVE_TAIL_LINES = 120;
 const GLIMPSE_TABLE_MAX_ROWS = 40;
 
-const RunParams = Type.Object({
-	command: Type.String({
+const RunParams = t.object({
+	command: t.string({
 		description:
 			"Shell command to run as the experiment, e.g. './autoresearch.sh' or 'pnpm test'.",
 	}),
-	timeout_seconds: Type.Optional(
-		Type.Number({ description: "Kill after this many seconds. Default: 600." }),
+	timeout_seconds: t.optional(
+		t.number({ description: "Kill after this many seconds. Default: 600." }),
 	),
-	checks_timeout_seconds: Type.Optional(
-		Type.Number({
+	checks_timeout_seconds: t.optional(
+		t.number({
 			description:
 				"Kill autoresearch.checks.sh after this many seconds. Default: 300.",
 		}),
 	),
 });
 
-const InitParams = Type.Object({
-	name: Type.String({ description: "Human-readable experiment session name." }),
-	metric_name: Type.String({
+const InitParams = t.object({
+	name: t.string({ description: "Human-readable experiment session name." }),
+	metric_name: t.string({
 		description: "Primary metric name, e.g. total_ms, bundle_kb, val_bpb.",
 	}),
-	metric_unit: Type.Optional(
-		Type.String({ description: "Metric unit, e.g. µs, ms, s, kb, mb, or ''." }),
+	metric_unit: t.optional(
+		t.string({ description: "Metric unit, e.g. µs, ms, s, kb, mb, or ''." }),
 	),
-	direction: Type.Optional(
-		Type.Union([Type.Literal("lower"), Type.Literal("higher")], {
+	direction: t.optional(
+		t.enum(["lower", "higher"], {
 			description: "Whether lower or higher metric values are better. Default: lower.",
 		}),
 	),
 });
 
-const LogParams = Type.Object({
-	commit: Type.String({ description: "Git commit hash, usually short." }),
-	metric: Type.Number({ description: "Primary optimization metric value. 0 for crashes." }),
-	status: Type.Union([
-		Type.Literal("keep"),
-		Type.Literal("discard"),
-		Type.Literal("crash"),
-		Type.Literal("checks_failed"),
-	]),
-	description: Type.String({ description: "Short description of what this experiment tried." }),
-	metrics: Type.Optional(
-		Type.Record(Type.String(), Type.Number(), {
+const LogParams = t.object({
+	commit: t.string({ description: "Git commit hash, usually short." }),
+	metric: t.number({ description: "Primary optimization metric value. 0 for crashes." }),
+	status: t.enum(["keep", "discard", "crash", "checks_failed"]),
+	description: t.string({ description: "Short description of what this experiment tried." }),
+	metrics: t.optional(
+		t.raw<Record<string, number>>({
+			type: "object",
+			additionalProperties: true,
 			description: "Secondary metrics as name/value pairs.",
 		}),
 	),
-	force: Type.Optional(
-		Type.Boolean({ description: "Allow adding newly discovered secondary metrics." }),
+	force: t.optional(
+		t.boolean({ description: "Allow adding newly discovered secondary metrics." }),
 	),
-	asi: Type.Optional(
-		Type.Record(Type.String(), Type.Unknown(), {
+	asi: t.optional(
+		t.raw<Record<string, unknown>>({
+			type: "object",
+			additionalProperties: true,
 			description:
 				"Actionable Side Information: free-form structured diagnostics for future iterations.",
 		}),
@@ -609,56 +608,51 @@ function cloneState(state: ExperimentState): ExperimentState {
 	};
 }
 
-function updateFooter(kit: PluginAPI, runtime: AutoresearchRuntime): void {
+/** Logs a footer change Kit rejected; the footer is decoration, not state. */
+function footerFailed(error: unknown): void {
+	console.error("Autoresearch footer update failed:", error);
+}
+
+function updateFooter(kit: Kit, runtime: AutoresearchRuntime): void {
 	const state = runtime.state;
 	if (!runtime.autoresearchMode && state.results.length === 0 && !runtime.runningExperiment) {
-		kit.footer.clear("status");
+		kit.footer.clear("status").catch(footerFailed);
 		return;
 	}
-	const theme = kit.ui.theme();
-	const tokens = theme.tokens;
 	const runs = currentResults(state.results, state.currentSegment);
 	const kept = runs.filter((run) => run.status === "keep").length;
 	const best = findBestMetric(state.results, state.currentSegment, state.bestDirection);
-	const content = [
-		kit.ui.text("🔬 autoresearch", { fg: tokens.toolText, bold: true }),
+	const content: FooterSegment[] = [
+		{ text: "🔬 autoresearch", style: { fg: "toolText", bold: true } },
 	];
 	if (runtime.runningExperiment) {
-		content.push(kit.ui.text(" running…", { fg: tokens.warningText }));
+		content.push({ text: " running…", style: { fg: "warningText" } });
 	}
 	content.push(
-		kit.ui.text(` ${runs.length}`, { fg: tokens.textPrimary }),
-		kit.ui.text(" runs ", { fg: tokens.textMuted }),
-		kit.ui.text(String(kept), { fg: tokens.toolText }),
-		kit.ui.text(" kept", { fg: tokens.textMuted }),
+		{ text: ` ${runs.length}`, style: { fg: "textPrimary" } },
+		{ text: " runs ", style: { fg: "textMuted" } },
+		{ text: String(kept), style: { fg: "toolText" } },
+		{ text: " kept", style: { fg: "textMuted" } },
 	);
 	if (best !== null) {
 		content.push(
-			kit.ui.text(" │ best ", { fg: tokens.textMuted }),
-			kit.ui.text(`${state.metricName}: ${formatNum(best, state.metricUnit)}`, {
-				fg: tokens.toolText,
-				bold: true,
-			}),
+			{ text: " │ best ", style: { fg: "textMuted" } },
+			{ text: `${state.metricName}: ${formatNum(best, state.metricUnit)}`, style: { fg: "toolText", bold: true } },
 		);
 	}
 	if (state.confidence !== null) {
 		const confidenceColor =
 			state.confidence >= 2
-				? tokens.progressNormal
+				? "progressNormal"
 				: state.confidence >= 1
-					? tokens.warningText
-					: tokens.errorText;
+					? "warningText"
+					: "errorText";
 		content.push(
-			kit.ui.text(" │ conf ", { fg: tokens.textMuted }),
-			kit.ui.text(`${state.confidence.toFixed(1)}×`, {
-				fg: confidenceColor,
-				bold: true,
-			}),
+			{ text: " │ conf ", style: { fg: "textMuted" } },
+			{ text: `${state.confidence.toFixed(1)}×`, style: { fg: confidenceColor, bold: true } },
 		);
 	}
-	kit.footer.set("status", content, {
-		side: "left",
-	});
+	kit.footer.set("status", content).catch(footerFailed);
 }
 
 function autoresearchHelp(): string {
@@ -895,7 +889,7 @@ function composeResumeMessage(): string {
 	].join(" ");
 }
 
-function AutoResearchPlugin(kit: PluginAPI) {
+export async function setup(kit: Kit) {
 	const runtimes = new Map<string, AutoresearchRuntime>();
 	let glimpseMissingToastShown = false;
 
@@ -911,7 +905,7 @@ function AutoResearchPlugin(kit: PluginAPI) {
 		});
 	}
 
-	function runtimeForSession(sessionId = kit.session.get().id): AutoresearchRuntime {
+	function runtimeForSession(sessionId = kit.session.id): AutoresearchRuntime {
 		let runtime = runtimes.get(sessionId);
 		if (!runtime) {
 			runtime = createRuntime();
@@ -958,21 +952,22 @@ function AutoResearchPlugin(kit: PluginAPI) {
 				if (runtime.pendingKickoff === kickoff) runtime.pendingKickoff = null;
 			},
 			(error: unknown) => {
-				if (!isSessionBusy(error)) warnSubmissionFailed(error);
+				if (!isTryLater(error, "session_busy")) warnSubmissionFailed(error);
 			},
 		);
 	}
 
-	kit.registerCommand(
-		"autoresearch",
-		{ description: "Start, stop, clear, or resume autoresearch mode", argName: "off|clear|goal" },
-		async (ctx) => {
-			const runtime = runtimeForSession(ctx.session.get().id);
-			const trimmedArgs = ctx.args.trim();
+	await kit.commands.register({
+		id: "autoresearch",
+		description: "Start, stop, clear, or resume autoresearch mode",
+		argName: "off|clear|goal",
+		async execute(args) {
+			const runtime = runtimeForSession(kit.session.id);
+			const trimmedArgs = args.trim();
 			const command = trimmedArgs.toLowerCase();
 
 			if (!trimmedArgs) {
-				ctx.ui.toast({ title: "Autoresearch", subtitle: autoresearchHelp(), variant: "info" });
+				kit.ui.toast({ title: "Autoresearch", subtitle: autoresearchHelp(), variant: "info" });
 				return;
 			}
 
@@ -988,19 +983,19 @@ function AutoResearchPlugin(kit: PluginAPI) {
 					// Leave the window up showing the finalized report.
 					void updateGlimpseDashboard(
 						runtime,
-						ctx.session.get().id,
-						resolveWorkDir(ctx.system.cwd),
+						kit.session.id,
+						resolveWorkDir(kit.project.cwd),
 						{ final: true },
 						{ force: true },
 					);
 				}
-				ctx.ui.toast({ title: "Autoresearch mode OFF", variant: "info" });
+				kit.ui.toast({ title: "Autoresearch mode OFF", variant: "info" });
 				return;
 			}
 
 
 			if (command === "clear") {
-				const workDir = resolveWorkDir(ctx.system.cwd);
+				const workDir = resolveWorkDir(kit.project.cwd);
 				const jsonlPath = autoresearchJsonlPath(workDir);
 				runtime.autoresearchMode = false;
 				runtime.experimentsThisSession = 0;
@@ -1012,14 +1007,14 @@ function AutoResearchPlugin(kit: PluginAPI) {
 				if (fs.existsSync(jsonlPath)) fs.unlinkSync(jsonlPath);
 				updateFooter(kit, runtime);
 				void glimpseClose(runtime.glimpse, workDir);
-				ctx.ui.toast({ title: "Autoresearch cleared", subtitle: "Deleted autoresearch.jsonl.", variant: "info" });
+				kit.ui.toast({ title: "Autoresearch cleared", subtitle: "Deleted autoresearch.jsonl.", variant: "info" });
 				return;
 			}
 
-			reconstructRuntime(runtime, ctx.system.cwd);
+			reconstructRuntime(runtime, kit.project.cwd);
 			runtime.autoresearchMode = true;
 			runtime.pendingKickoff = null;
-			const workDir = resolveWorkDir(ctx.system.cwd);
+			const workDir = resolveWorkDir(kit.project.cwd);
 			const rulesLoaded = fs.existsSync(autoresearchMdPath(workDir));
 			const activationSteer = await runHook({
 				event: "before",
@@ -1034,34 +1029,34 @@ function AutoResearchPlugin(kit: PluginAPI) {
 			updateFooter(kit, runtime);
 			void maybeToastGlimpseMissing(workDir);
 			if (runtime.state.results.length > 0) {
-				void updateGlimpseDashboard(runtime, ctx.session.get().id, workDir, {}, { force: true });
+				void updateGlimpseDashboard(runtime, kit.session.id, workDir, {}, { force: true });
 			}
-			ctx.ui.toast({
+			kit.ui.toast({
 				title: "Autoresearch mode ON",
 				subtitle: rulesLoaded ? "Resuming from autoresearch.md." : "No autoresearch.md found; setting up.",
 				variant: "info",
 			});
 			const message = activationSteer ? `${activationSteer}\n\n${kickoff}` : kickoff;
 			try {
-				await ctx.session.submitMessage(message);
+				await kit.session.submitMessage(message);
 			} catch (error) {
-				if (!isSessionBusy(error)) {
+				if (!isTryLater(error, "session_busy")) {
 					warnSubmissionFailed(error);
 					return;
 				}
 				// The session is running a turn; start when it completes.
 				runtime.pendingKickoff = message;
-				ctx.ui.toast({
+				kit.ui.toast({
 					title: "Autoresearch queued",
 					subtitle: "It will start when the current turn finishes.",
 					variant: "info",
 				});
 			}
 		},
-	);
+	});
 
-	kit.registerTool({
-		name: "init_experiment",
+	await kit.tools.register({
+		id: "init_experiment",
 		label: "Init Experiment",
 		description:
 			"Initialize an autoresearch experiment session. Writes the config header to autoresearch.jsonl.",
@@ -1070,10 +1065,10 @@ function AutoResearchPlugin(kit: PluginAPI) {
 			"Call autoresearch__init_experiment exactly once at the start of an autoresearch session before the first autoresearch__run_experiment.",
 			"If autoresearch.jsonl already exists with a config, do not call autoresearch__init_experiment again unless changing target/metric/workload.",
 		],
-		parameters: InitParams,
-		async execute(_toolCallId, params): Promise<ToolResult<{ state?: ExperimentState }>> {
+		input: InitParams,
+		async execute(params): Promise<ToolResult> {
 			const runtime = runtimeForSession();
-			const cwd = kit.system.cwd;
+			const cwd = kit.project.cwd;
 			const error = validateWorkDir(cwd);
 			if (error) return { content: [{ type: "text", text: `❌ ${error}` }], details: {} };
 
@@ -1114,8 +1109,8 @@ function AutoResearchPlugin(kit: PluginAPI) {
 		},
 	});
 
-	kit.registerTool({
-		name: "run_experiment",
+	await kit.tools.register({
+		id: "run_experiment",
 		label: "Run Experiment",
 		description:
 			"Run a timed experiment command, capture output, parse METRIC name=value lines, and run autoresearch.checks.sh when present.",
@@ -1125,11 +1120,11 @@ function AutoResearchPlugin(kit: PluginAPI) {
 			"After autoresearch__run_experiment, always call autoresearch__log_experiment.",
 			"If METRIC lines are parsed, use those exact values in autoresearch__log_experiment.",
 		],
-		parameters: RunParams,
-		async execute(_toolCallId, params, signal, onUpdate): Promise<ToolResult<RunDetails>> {
+		input: RunParams,
+		async execute(params, { signal }): Promise<ToolResult> {
 			const runtime = runtimeForSession();
 			const state = runtime.state;
-			const cwd = kit.system.cwd;
+			const cwd = kit.project.cwd;
 			const error = validateWorkDir(cwd);
 			if (error) {
 				return { content: [{ type: "text", text: `❌ ${error}` }], details: {} as RunDetails };
@@ -1152,7 +1147,7 @@ function AutoResearchPlugin(kit: PluginAPI) {
 				};
 			}
 
-			const sessionId = kit.session.get().id;
+			const sessionId = kit.session.id;
 			const startedAt = Date.now();
 			runtime.runningExperiment = { startedAt, command: params.command };
 			updateFooter(kit, runtime);
@@ -1168,10 +1163,6 @@ function AutoResearchPlugin(kit: PluginAPI) {
 				timeoutMs: (params.timeout_seconds ?? 600) * 1000,
 				signal,
 				onOutput: (output) => {
-					onUpdate?.({
-						content: [{ type: "text", text: tailText(output, EXPERIMENT_MAX_LINES, EXPERIMENT_MAX_BYTES) }],
-						details: {} as RunDetails,
-					});
 					void updateGlimpseDashboard(runtime, sessionId, workDir, {
 						live: { command: params.command, output, startedAt },
 					});
@@ -1255,8 +1246,8 @@ function AutoResearchPlugin(kit: PluginAPI) {
 		},
 	});
 
-	kit.registerTool({
-		name: "log_experiment",
+	await kit.tools.register({
+		id: "log_experiment",
 		label: "Log Experiment",
 		description:
 			"Record an autoresearch experiment result. Keeps auto-commit; discard/crash/checks_failed auto-revert code changes while preserving autoresearch files.",
@@ -1267,11 +1258,11 @@ function AutoResearchPlugin(kit: PluginAPI) {
 			"Use discard for worse/unchanged results, crash for benchmark failure, and checks_failed when autoresearch.checks.sh fails.",
 			"Always include asi with at least a hypothesis; on discard/crash include rollback_reason and next_action_hint.",
 		],
-		parameters: LogParams,
-		async execute(_toolCallId, params): Promise<ToolResult<{ experiment?: ExperimentResult; state?: ExperimentState; wallClockSeconds?: number | null }>> {
+		input: LogParams,
+		async execute(params): Promise<ToolResult> {
 			const runtime = runtimeForSession();
 			const state = runtime.state;
-			const cwd = kit.system.cwd;
+			const cwd = kit.project.cwd;
 			const error = validateWorkDir(cwd);
 			if (error) return { content: [{ type: "text", text: `❌ ${error}` }], details: {} };
 			const workDir = resolveWorkDir(cwd);
@@ -1397,7 +1388,7 @@ function AutoResearchPlugin(kit: PluginAPI) {
 			updateFooter(kit, runtime);
 			void updateGlimpseDashboard(
 				runtime,
-				kit.session.get().id,
+				kit.session.id,
 				workDir,
 				{ final: limitReached },
 				{ force: true },
@@ -1409,13 +1400,16 @@ function AutoResearchPlugin(kit: PluginAPI) {
 		},
 	});
 
-	kit.on("session.active.changed", (_event, ctx) => {
-		const runtime = runtimeForSession(ctx.session.get().id);
-		reconstructRuntime(runtime, ctx.system.cwd);
-	});
+	// The working directory or session changed: reload persisted state.
+	for (const event of ["project.changed", "session.changed"] as const) {
+		kit.on(event, () => {
+			const runtime = runtimeForSession(kit.session.id);
+			reconstructRuntime(runtime, kit.project.cwd);
+		});
+	}
 
-	kit.on("agent.turn.completed", (event, ctx) => {
-		const runtime = runtimeForSession(ctx.session.get().id);
+	kit.on("turn.completed", (event) => {
+		const runtime = runtimeForSession(kit.session.id);
 		runtime.runningExperiment = null;
 		updateFooter(kit, runtime);
 		if (runtime.pendingKickoff || runtime.experimentsThisSession > 0) continueLoop(runtime, event.turn.id);
@@ -1423,10 +1417,10 @@ function AutoResearchPlugin(kit: PluginAPI) {
 
 	return () => {
 		for (const runtime of runtimes.values()) {
-			void glimpseClose(runtime.glimpse, kit.system.cwd);
+			void glimpseClose(runtime.glimpse, kit.project.cwd);
 		}
-		kit.footer.clear("status");
+		// Kit removes the plugin's footer item when it stops.
 	};
 }
 
-runPlugin(AutoResearchPlugin);
+if (import.meta.main) runPlugin(setup);
