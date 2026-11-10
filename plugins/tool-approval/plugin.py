@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Ask before risky tool calls in explicitly enabled projects."""
+"""Ask before risky tool calls in explicitly enabled projects.
+
+Speaks Kit plugin protocol 2. The approval dialog names the interceptor
+request it belongs to as its parentId, so Kit closes the dialog when that
+request ends, for example when the turn is aborted.
+"""
 
 import json
 import os
@@ -116,7 +121,7 @@ class Endpoint:
             },
         )
 
-    def approve(self, tool_call):
+    def approve(self, tool_call, request_id):
         if not self.is_enabled():
             return {"action": "allow"}
 
@@ -137,6 +142,7 @@ class Endpoint:
                 "confirmLabel": "Allow",
                 "cancelLabel": "Block",
                 "defaultValue": False,
+                "parentId": request_id,
             },
         )
         if approved:
@@ -167,10 +173,10 @@ class Endpoint:
 
         try:
             if method == "initialize":
-                if params.get("protocolVersion") != 1:
+                if params.get("protocolVersion") != 2:
                     raise ValueError("Unsupported protocol version")
                 self.set_current_project(params.get("context", {}).get("project", {}))
-                result = {"protocolVersion": 1}
+                result = {"protocolVersion": 2}
             elif method == "shutdown":
                 result = None
                 self.stopping.set()
@@ -180,7 +186,7 @@ class Endpoint:
                 self.toggle_current_project()
                 result = None
             elif method == "kit/tool-calls/before-execute":
-                result = self.approve(params["toolCall"])
+                result = self.approve(params["toolCall"], message["id"])
             else:
                 raise KeyError("Method not found")
 
@@ -220,16 +226,15 @@ class Endpoint:
             if not line.strip():
                 continue
             try:
-                frame = json.loads(line)
-                for message in frame if isinstance(frame, list) else [frame]:
-                    if message.get("method") == "shutdown" or "id" not in message:
-                        self.handle(message)
-                    else:
-                        threading.Thread(
-                            target=self.handle,
-                            args=(message,),
-                            daemon=True,
-                        ).start()
+                message = json.loads(line)
+                if message.get("method") == "shutdown" or "id" not in message:
+                    self.handle(message)
+                else:
+                    threading.Thread(
+                        target=self.handle,
+                        args=(message,),
+                        daemon=True,
+                    ).start()
             except Exception as error:
                 print(error, file=sys.stderr)
             if self.stopping.is_set():
