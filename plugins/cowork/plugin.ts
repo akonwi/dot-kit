@@ -20,13 +20,12 @@
 // two already have with each other (atomic rename, no cross-process
 // file lock — see cowork's docs/backlog.md).
 
-import { createInterface } from "node:readline";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
+import { type Infer, type JsonValue, type Kit, runPlugin, t } from "./kit-plugin.ts";
 
-const MAX_FRAME_BYTES = 16 * 1024 * 1024;
-const ACTIONS_PATH = path.join(homedir(), ".cowork", "actions.json");
+export const ACTIONS_PATH = path.join(homedir(), ".cowork", "actions.json");
 
 type ActionItem = {
 	id: string;
@@ -38,18 +37,6 @@ type ActionItem = {
 	completed_at: string;
 	due_at: string;
 };
-
-type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
-type RpcId = string | number;
-type PendingRequest = { resolve: (value: Json) => void; reject: (error: Error) => void };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-function isRpcId(value: unknown): value is RpcId {
-	return typeof value === "string" || (typeof value === "number" && Number.isInteger(value));
-}
 
 // ── Storage: mirrors cowork's models/actions.ard exactly ─────────────────
 
@@ -106,21 +93,38 @@ function isOverdue(item: ActionItem, now: string): boolean {
 
 // ── Tool implementation ───────────────────────────────────────────────────
 
-type ToolInput = {
-	action?: "list" | "add" | "edit" | "complete" | "reopen";
-	id?: string;
-	text?: string;
-	group?: "immediate" | "this_week";
-	due_at?: string;
-	parent_id?: string;
+const ToolInput = t.object({
+	action: t.enum(["list", "add", "edit", "complete", "reopen"]),
+	id: t.optional(t.string({ description: "Item id — required for edit, complete, and reopen. Get it from 'list' first." })),
+	text: t.optional(t.string({ description: "The action item's text. Required for add; optional for edit." })),
+	group: t.optional(
+		t.enum(["immediate", "this_week"], {
+			description: "immediate = blocking or due very soon; this_week = everything else open-ended. Defaults to this_week on add.",
+		}),
+	),
+	due_at: t.optional(
+		t.string({
+			description:
+				"Explicit deadline as YYYY-MM-DD. Leave unset unless the user actually stated one — cowork falls back to a sensible default based on group.",
+		}),
+	),
+	parent_id: t.optional(
+		t.string({ description: "Id of a parent item, to add/edit this as a nested sub-task. Leave unset for a top-level item." }),
+	),
 	// Set by cowork's own extraction pipeline when it prompts a headless
 	// session to add items directly via this tool (cowork's ADR 0013) —
 	// not something an interactive user would normally set themselves.
-	source_meeting?: string;
-};
+	source_meeting: t.optional(
+		t.string({
+			description:
+				"Internal: the source meeting's id, when this item is being added on behalf of an automated extraction pass rather than direct conversation. Leave unset otherwise.",
+		}),
+	),
+});
+type ToolInput = Infer<typeof ToolInput>;
 
-function textResult(text: string, details: unknown = null) {
-	return { content: [{ type: "text", text }], details };
+function textResult(text: string, details: JsonValue = null) {
+	return { content: [{ type: "text" as const, text }], details };
 }
 
 function summarizeItem(item: ActionItem, now: string): string {
@@ -193,145 +197,24 @@ function executeTool(input: ToolInput) {
 	}
 }
 
-// ── JSON-RPC 2.0 endpoint (self-contained, no shared dependency —
-//    the convention of this repo's plugins) ───────────────
+// ── Plugin ─────────────────────────────────────────────────────────────────
 
-class Endpoint {
-	private nextId = 1;
-	private pending = new Map<RpcId, PendingRequest>();
-	private writeChain = Promise.resolve();
-	private initialized = false;
-	private stopping = false;
-
-	start(): void {
-		const input = createInterface({ input: process.stdin, crlfDelay: Infinity });
-		input.on("line", (line) => {
-			if (!line.trim()) return;
-			if (Buffer.byteLength(line, "utf8") > MAX_FRAME_BYTES) {
-				console.error("Inbound frame exceeds 16 MiB");
-				process.exit(1);
-			}
-			let message: unknown;
-			try {
-				message = JSON.parse(line);
-			} catch (error) {
-				console.error("Invalid JSON-RPC frame:", error);
-				process.exit(1);
-			}
-			for (const item of Array.isArray(message) ? message : [message]) {
-				void this.receive(item);
-			}
-		});
-	}
-
-	private async receive(message: unknown): Promise<void> {
-		if (!isRecord(message) || message.jsonrpc !== "2.0") return;
-		if (("result" in message || "error" in message) && isRpcId(message.id)) {
-			const pending = this.pending.get(message.id);
-			if (!pending) return;
-			this.pending.delete(message.id);
-			if (isRecord(message.error)) {
-				pending.reject(new Error(String(message.error.message ?? "Kit request failed")));
-			} else {
-				pending.resolve((message.result ?? null) as Json);
-			}
-			return;
-		}
-		if (typeof message.method !== "string") return;
-		const params = isRecord(message.params) ? message.params : {};
-		if (!isRpcId(message.id)) return; // no notifications handled by this plugin
-		try {
-			const result = await this.handleRequest(message.method, params);
-			await this.send({ jsonrpc: "2.0", id: message.id, result });
-			if (message.method === "shutdown") process.exit(0);
-		} catch (error) {
-			await this.send({
-				jsonrpc: "2.0",
-				id: message.id,
-				error: {
-					code: -32000,
-					message: error instanceof Error ? error.message : String(error),
-				},
-			});
-		}
-	}
-
-	private async handleRequest(method: string, params: Record<string, unknown>): Promise<Json> {
-		switch (method) {
-			case "initialize": {
-				if (params.protocolVersion !== 1) throw new Error("Unsupported protocol version");
-				this.initialized = true;
-				setTimeout(() => void this.registerTool(), 0);
-				return { protocolVersion: 1 };
-			}
-			case "kit/tools/execute": {
-				if (params.id !== "actions") throw new Error(`Unknown tool: ${String(params.id)}`);
-				return executeTool((params.input ?? {}) as ToolInput) as Json;
-			}
-			case "shutdown":
-				this.stopping = true;
-				return null;
-			default:
-				throw new Error(`Method not found: ${method}`);
-		}
-	}
-
-	private async registerTool(): Promise<void> {
-		try {
-			await this.request("kit/tools/register", {
-				id: "actions",
-				label: "Cowork Actions",
-				description: "Create, edit, complete, or reopen items in cowork's aggregate action-item list.",
-				inputSchema: {
-					type: "object",
-					properties: {
-						action: { type: "string", enum: ["list", "add", "edit", "complete", "reopen"] },
-						id: { type: "string", description: "Item id — required for edit, complete, and reopen. Get it from 'list' first." },
-						text: { type: "string", description: "The action item's text. Required for add; optional for edit." },
-						group: { type: "string", enum: ["immediate", "this_week"], description: "immediate = blocking or due very soon; this_week = everything else open-ended. Defaults to this_week on add." },
-						due_at: { type: "string", description: "Explicit deadline as YYYY-MM-DD. Leave unset unless the user actually stated one — cowork falls back to a sensible default based on group." },
-						parent_id: { type: "string", description: "Id of a parent item, to add/edit this as a nested sub-task. Leave unset for a top-level item." },
-						source_meeting: { type: "string", description: "Internal: the source meeting's id, when this item is being added on behalf of an automated extraction pass rather than direct conversation. Leave unset otherwise." },
-					},
-					required: ["action"],
-					additionalProperties: false,
-				},
-				executionMode: "sequential",
-				promptSnippet: "Manage cowork's aggregate action-item list",
-				promptGuidelines: [
-					`Items live in ${ACTIONS_PATH}, shared across every project — this is the user's one aggregate to-do list, not scoped to the current project.`,
-					"Call 'list' first when you need an item's id (for edit/complete/reopen) or want to check what's already open before adding something that might be a duplicate.",
-					"An item only disappears from 'list' once it's completed — nothing expires or gets cleaned up on its own.",
-					"Only set due_at when the user actually stated a deadline. Otherwise leave it unset — cowork computes a sensible default (immediate items: ~1 day, everything else: ~1 week) and a separate scheduled check nudges the user about anything overdue.",
-				],
-			});
-		} catch (error) {
-			console.error("Could not register cowork actions tool:", error);
-		}
-	}
-
-	private request(method: string, params?: Json): Promise<Json> {
-		if (!this.initialized || this.stopping) return Promise.reject(new Error("Plugin is not ready"));
-		const id = `plugin-${this.nextId++}`;
-		return new Promise((resolve, reject) => {
-			this.pending.set(id, { resolve, reject });
-			void this.send({ jsonrpc: "2.0", id, method, ...(params === undefined ? {} : { params }) });
-		});
-	}
-
-	private send(message: unknown): Promise<void> {
-		const line = `${JSON.stringify(message)}\n`;
-		if (Buffer.byteLength(line, "utf8") > MAX_FRAME_BYTES) {
-			return Promise.reject(new Error("Outbound frame exceeds 16 MiB"));
-		}
-		const write = () =>
-			new Promise<void>((resolve, reject) => {
-				process.stdout.write(line, (error) => (error ? reject(error) : resolve()));
-			});
-		const pending = this.writeChain.then(write);
-		this.writeChain = pending.catch((error) => console.error("Protocol write failed:", error));
-		return pending;
-	}
+export async function setup(kit: Kit) {
+	await kit.tools.register({
+		id: "actions",
+		label: "Cowork Actions",
+		description: "Create, edit, complete, or reopen items in cowork's aggregate action-item list.",
+		input: ToolInput,
+		executionMode: "sequential",
+		promptSnippet: "Manage cowork's aggregate action-item list",
+		promptGuidelines: [
+			`Items live in ${ACTIONS_PATH}, shared across every project — this is the user's one aggregate to-do list, not scoped to the current project.`,
+			"Call 'list' first when you need an item's id (for edit/complete/reopen) or want to check what's already open before adding something that might be a duplicate.",
+			"An item only disappears from 'list' once it's completed — nothing expires or gets cleaned up on its own.",
+			"Only set due_at when the user actually stated a deadline. Otherwise leave it unset — cowork computes a sensible default (immediate items: ~1 day, everything else: ~1 week) and a separate scheduled check nudges the user about anything overdue.",
+		],
+		execute: (input) => executeTool(input),
+	});
 }
 
-new Endpoint().start();
+if (import.meta.main) runPlugin(setup);
