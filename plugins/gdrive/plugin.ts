@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
-/** Google Drive plugin for Kit's JSON-RPC plugin protocol. */
+/** Google Drive plugin for Kit, speaking plugin protocol 2 through Kit's TypeScript helper. */
 
-import { KitPluginEndpoint } from "../_shared/rpc";
+import { type Dialogs, type Kit, runPlugin, t, type ToolInputSchema, type ToolResult as KitToolResult } from "./kit-plugin.ts";
 import { google } from "googleapis";
 import type { OAuth2Client } from "google-auth-library";
 import type { docs_v1 } from "googleapis";
@@ -301,7 +301,7 @@ type CommandContext = {
 type ToolResult = {
 	content: Array<
 		| { type: "text"; text: string }
-		| { type: "image"; data: string; mimeType: string }
+		| { type: "image"; data: string; mimeType: "image/png" | "image/jpeg" | "image/gif" | "image/webp" }
 	>;
 	details?: unknown;
 	terminate?: boolean;
@@ -367,7 +367,6 @@ const Schema = {
 	},
 };
 
-const endpoint = new KitPluginEndpoint();
 const commands = new Map<string, CommandDefinition>();
 const tools = new Map<string, ToolDefinition>();
 
@@ -383,25 +382,19 @@ function registerTool(definition: ToolDefinition): void {
 	tools.set(definition.name, definition);
 }
 
-function toast(input: ToastInput): void {
-	endpoint.toast(input.title, input.variant, input.subtitle);
-}
-
-function commandContext(args: string): CommandContext {
+function commandContext(kit: Kit, args: string, ui: Dialogs): CommandContext {
 	return {
 		args,
 		ui: {
-			toast,
-			async confirm(input) {
-				return (await endpoint.request("kit/ui/confirm", input)) === true;
-			},
+			toast: (input) => kit.ui.toast(input),
+			confirm: (input) => ui.confirm(input),
 			async input(input) {
-				const result = await endpoint.request("kit/ui/input", input);
-				return typeof result === "string" ? result : undefined;
+				return (await ui.input(input)) ?? undefined;
 			},
 		},
 	};
 }
+
 	// ── Auth Command ──────────────────────────────────────────────────
 
 	registerCommand(
@@ -1517,52 +1510,27 @@ function commandContext(args: string): CommandContext {
 		},
 	});
 
-endpoint.onInitialize(
-	(params) => {
-		if (params.protocolVersion !== 1) throw new Error("Unsupported protocol version");
-		return { protocolVersion: 1 };
-	},
-	async () => {
-		for (const command of commands.values()) {
-			await endpoint.request("kit/commands/register", {
-				id: command.id,
-				description: command.description,
-				category: "Google Drive",
-			});
-		}
-		for (const tool of tools.values()) {
-			await endpoint.request("kit/tools/register", {
-				id: tool.name,
-				label: tool.label ?? tool.name,
-				description: tool.description,
-				inputSchema: tool.parameters,
-				executionMode: "sequential",
-				...(tool.promptSnippet ? { promptSnippet: tool.promptSnippet } : {}),
-				...(tool.promptGuidelines ? { promptGuidelines: tool.promptGuidelines } : {}),
-			});
-		}
-	},
-);
+export async function setup(kit: Kit) {
+	for (const command of commands.values()) {
+		await kit.commands.register({
+			id: command.id,
+			description: command.description,
+			category: "Google Drive",
+			execute: (args, { ui }) => command.handler(commandContext(kit, args, ui)),
+		});
+	}
+	for (const tool of tools.values()) {
+		await kit.tools.register({
+			id: tool.name,
+			label: tool.label ?? tool.name,
+			description: tool.description,
+			input: t.raw<Record<string, any>>(tool.parameters as unknown as ToolInputSchema),
+			executionMode: "sequential",
+			...(tool.promptSnippet ? { promptSnippet: tool.promptSnippet } : {}),
+			...(tool.promptGuidelines ? { promptGuidelines: tool.promptGuidelines } : {}),
+			execute: (input, { toolCallId }): Promise<KitToolResult> => tool.execute(toolCallId, input),
+		});
+	}
+}
 
-endpoint.onRequest("kit/commands/execute", async (params) => {
-	const id = typeof params.id === "string" ? params.id : "";
-	const command = commands.get(id);
-	if (!command) throw new Error(`Unknown Google Drive command: ${id}`);
-	await command.handler(commandContext(typeof params.args === "string" ? params.args : ""));
-	return null;
-});
-
-endpoint.onRequest("kit/tools/execute", async (params) => {
-	const id = typeof params.id === "string" ? params.id : "";
-	const tool = tools.get(id);
-	if (!tool) throw new Error(`Unknown Google Drive tool: ${id}`);
-	const input = params.input && typeof params.input === "object"
-		? params.input as Record<string, unknown>
-		: {};
-	return tool.execute(
-		typeof params.toolCallId === "string" ? params.toolCallId : "",
-		input,
-	);
-});
-
-endpoint.start();
+if (import.meta.main) runPlugin(setup);

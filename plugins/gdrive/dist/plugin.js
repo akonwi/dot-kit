@@ -5,25 +5,43 @@ var __getProtoOf = Object.getPrototypeOf;
 var __defProp = Object.defineProperty;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+function __accessProp(key) {
+  return this[key];
+}
+var __toESMCache_node;
+var __toESMCache_esm;
 var __toESM = (mod, isNodeMode, target) => {
+  var canCache = mod != null && typeof mod === "object";
+  if (canCache) {
+    var cache = isNodeMode ? __toESMCache_node ??= new WeakMap : __toESMCache_esm ??= new WeakMap;
+    var cached = cache.get(mod);
+    if (cached)
+      return cached;
+  }
   target = mod != null ? __create(__getProtoOf(mod)) : {};
   const to = isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target;
   for (let key of __getOwnPropNames(mod))
     if (!__hasOwnProp.call(to, key))
       __defProp(to, key, {
-        get: () => mod[key],
+        get: __accessProp.bind(mod, key),
         enumerable: true
       });
+  if (canCache)
+    cache.set(mod, to);
   return to;
 };
 var __commonJS = (cb, mod) => () => (mod || cb((mod = { exports: {} }).exports, mod), mod.exports);
+var __returnValue = (v) => v;
+function __exportSetter(name, newValue) {
+  this[name] = __returnValue.bind(null, newValue);
+}
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, {
       get: all[name],
       enumerable: true,
       configurable: true,
-      set: (newValue) => all[name] = () => newValue
+      set: __exportSetter.bind(all, name)
     });
 };
 var __esm = (fn, res) => () => (fn && (res = fn(fn = 0)), res);
@@ -35,13 +53,13 @@ var require_extend = __commonJS((exports, module) => {
   var toStr = Object.prototype.toString;
   var defineProperty = Object.defineProperty;
   var gOPD = Object.getOwnPropertyDescriptor;
-  var isArray = function isArray(arr) {
+  var isArray = function isArray2(arr) {
     if (typeof Array.isArray === "function") {
       return Array.isArray(arr);
     }
     return toStr.call(arr) === "[object Array]";
   };
-  var isPlainObject = function isPlainObject(obj) {
+  var isPlainObject = function isPlainObject2(obj) {
     if (!obj || toStr.call(obj) !== "[object Object]") {
       return false;
     }
@@ -54,7 +72,7 @@ var require_extend = __commonJS((exports, module) => {
     for (key in obj) {}
     return typeof key === "undefined" || hasOwn.call(obj, key);
   };
-  var setProperty = function setProperty(target, options) {
+  var setProperty = function setProperty2(target, options) {
     if (defineProperty && options.name === "__proto__") {
       defineProperty(target, options.name, {
         enumerable: true,
@@ -66,7 +84,7 @@ var require_extend = __commonJS((exports, module) => {
       target[options.name] = options.newValue;
     }
   };
-  var getProperty = function getProperty(obj, name) {
+  var getProperty = function getProperty2(obj, name) {
     if (name === "__proto__") {
       if (!hasOwn.call(obj, name)) {
         return;
@@ -554,12 +572,12 @@ var require_v1 = __commonJS((exports) => {
     let i = buf && offset || 0;
     const b = buf || new Array(16);
     options = options || {};
-    let node = options.node || _nodeId;
+    let node2 = options.node || _nodeId;
     let clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq;
-    if (node == null || clockseq == null) {
+    if (node2 == null || clockseq == null) {
       const seedBytes = options.random || (options.rng || _rng.default)();
-      if (node == null) {
-        node = _nodeId = [seedBytes[0] | 1, seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
+      if (node2 == null) {
+        node2 = _nodeId = [seedBytes[0] | 1, seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
       }
       if (clockseq == null) {
         clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 16383;
@@ -594,7 +612,7 @@ var require_v1 = __commonJS((exports) => {
     b[i++] = clockseq >>> 8 | 128;
     b[i++] = clockseq & 255;
     for (let n = 0;n < 6; ++n) {
-      b[i + n] = node[n];
+      b[i + n] = node2[n];
     }
     return buf || (0, _stringify.unsafeStringify)(b);
   }
@@ -1987,10 +2005,10 @@ var require_dist3 = __commonJS((exports) => {
       const proxyResponsePromise = (0, parse_proxy_response_1.parseProxyResponse)(socket);
       socket.write(`${payload}\r
 `);
-      const { connect, buffered } = await proxyResponsePromise;
-      req.emit("proxyConnect", connect);
-      this.emit("proxyConnect", connect, req);
-      if (connect.statusCode === 200) {
+      const { connect: connect2, buffered } = await proxyResponsePromise;
+      req.emit("proxyConnect", connect2);
+      this.emit("proxyConnect", connect2, req);
+      if (connect2.statusCode === 200) {
         req.once("socket", resume);
         if (opts.secureEndpoint) {
           debug("Upgrading socket connection to TLS");
@@ -2264,7 +2282,7 @@ Content-Type: ${partContentType}\r
     }
   }
   exports.Gaxios = Gaxios;
-  _a = Gaxios, _Gaxios_instances = new WeakSet, _Gaxios_urlMayUseProxy = function _Gaxios_urlMayUseProxy(url, noProxy = []) {
+  _a = Gaxios, _Gaxios_instances = new WeakSet, _Gaxios_urlMayUseProxy = function _Gaxios_urlMayUseProxy2(url, noProxy = []) {
     var _b, _c;
     const candidate = new url_1.URL(url);
     const noProxyList = [...noProxy];
@@ -2291,7 +2309,7 @@ Content-Type: ${partContentType}\r
       }
     }
     return true;
-  }, _Gaxios_applyRequestInterceptors = async function _Gaxios_applyRequestInterceptors(options) {
+  }, _Gaxios_applyRequestInterceptors = async function _Gaxios_applyRequestInterceptors2(options) {
     let promiseChain = Promise.resolve(options);
     for (const interceptor of this.interceptors.request.values()) {
       if (interceptor) {
@@ -2299,7 +2317,7 @@ Content-Type: ${partContentType}\r
       }
     }
     return promiseChain;
-  }, _Gaxios_applyResponseInterceptors = async function _Gaxios_applyResponseInterceptors(response) {
+  }, _Gaxios_applyResponseInterceptors = async function _Gaxios_applyResponseInterceptors2(response) {
     let promiseChain = Promise.resolve(response);
     for (const interceptor of this.interceptors.response.values()) {
       if (interceptor) {
@@ -2307,7 +2325,7 @@ Content-Type: ${partContentType}\r
       }
     }
     return promiseChain;
-  }, _Gaxios_prepareRequest = async function _Gaxios_prepareRequest(options) {
+  }, _Gaxios_prepareRequest = async function _Gaxios_prepareRequest2(options) {
     var _b, _c, _d, _e;
     const opts = (0, extend_1.default)(true, {}, this.defaults, options);
     if (!opts.url) {
@@ -2397,7 +2415,7 @@ Content-Type: ${partContentType}\r
       opts.errorRedactor = common_1.defaultErrorRedactor;
     }
     return opts;
-  }, _Gaxios_getProxyAgent = async function _Gaxios_getProxyAgent() {
+  }, _Gaxios_getProxyAgent = async function _Gaxios_getProxyAgent2() {
     __classPrivateFieldSet(this, _a, __classPrivateFieldGet(this, _a, "f", _Gaxios_proxyAgent) || (await Promise.resolve().then(() => __importStar(require_dist3()))).HttpsProxyAgent, "f", _Gaxios_proxyAgent);
     return __classPrivateFieldGet(this, _a, "f", _Gaxios_proxyAgent);
   };
@@ -3391,7 +3409,7 @@ var require_bignumber = __commonJS((exports, module) => {
         return !!this.c && this.c[0] == 0;
       };
       P.minus = function(y, b) {
-        var i, j, t, xLTy, x = this, a = x.s;
+        var i, j, t2, xLTy, x = this, a = x.s;
         y = new BigNumber2(y, b);
         b = y.s;
         if (!a || !b)
@@ -3414,15 +3432,15 @@ var require_bignumber = __commonJS((exports, module) => {
         if (a = xe - ye) {
           if (xLTy = a < 0) {
             a = -a;
-            t = xc;
+            t2 = xc;
           } else {
             ye = xe;
-            t = yc;
+            t2 = yc;
           }
-          t.reverse();
-          for (b = a;b--; t.push(0))
+          t2.reverse();
+          for (b = a;b--; t2.push(0))
             ;
-          t.reverse();
+          t2.reverse();
         } else {
           j = (xLTy = (a = xc.length) < (b = yc.length)) ? a : b;
           for (a = b = 0;b < j; b++) {
@@ -3433,9 +3451,9 @@ var require_bignumber = __commonJS((exports, module) => {
           }
         }
         if (xLTy) {
-          t = xc;
+          t2 = xc;
           xc = yc;
-          yc = t;
+          yc = t2;
           y.s = -y.s;
         }
         b = (j = yc.length) - (i = xc.length);
@@ -3542,7 +3560,7 @@ var require_bignumber = __commonJS((exports, module) => {
         return x;
       };
       P.plus = function(y, b) {
-        var t, x = this, a = x.s;
+        var t2, x = this, a = x.s;
         y = new BigNumber2(y, b);
         b = y.s;
         if (!a || !b)
@@ -3564,22 +3582,22 @@ var require_bignumber = __commonJS((exports, module) => {
         if (a = xe - ye) {
           if (a > 0) {
             ye = xe;
-            t = yc;
+            t2 = yc;
           } else {
             a = -a;
-            t = xc;
+            t2 = xc;
           }
-          t.reverse();
-          for (;a--; t.push(0))
+          t2.reverse();
+          for (;a--; t2.push(0))
             ;
-          t.reverse();
+          t2.reverse();
         }
         a = xc.length;
         b = yc.length;
         if (a - b < 0) {
-          t = yc;
+          t2 = yc;
           yc = xc;
-          xc = t;
+          xc = t2;
           b = a;
         }
         for (a = 0;b; ) {
@@ -3621,7 +3639,7 @@ var require_bignumber = __commonJS((exports, module) => {
         return this.times("1e" + k);
       };
       P.squareRoot = P.sqrt = function() {
-        var m, n, r, rep, t, x = this, c = x.c, s = x.s, e = x.e, dp = DECIMAL_PLACES + 4, half = new BigNumber2("0.5");
+        var m, n, r, rep, t2, x = this, c = x.c, s = x.s, e = x.e, dp = DECIMAL_PLACES + 4, half = new BigNumber2("0.5");
         if (s !== 1 || !c || !c[0]) {
           return new BigNumber2(!s || s < 0 && (!c || c[0]) ? NaN : c ? x : 1 / 0);
         }
@@ -3648,17 +3666,17 @@ var require_bignumber = __commonJS((exports, module) => {
           if (s < 3)
             s = 0;
           for (;; ) {
-            t = r;
-            r = half.times(t.plus(div(x, t, dp, 1)));
-            if (coeffToString(t.c).slice(0, s) === (n = coeffToString(r.c)).slice(0, s)) {
+            t2 = r;
+            r = half.times(t2.plus(div(x, t2, dp, 1)));
+            if (coeffToString(t2.c).slice(0, s) === (n = coeffToString(r.c)).slice(0, s)) {
               if (r.e < e)
                 --s;
               n = n.slice(s - 3, s + 1);
               if (n == "9999" || !rep && n == "4999") {
                 if (!rep) {
-                  round(t, t.e + DECIMAL_PLACES + 2, 0);
-                  if (t.times(t).eq(x)) {
-                    r = t;
+                  round(t2, t2.e + DECIMAL_PLACES + 2, 0);
+                  if (t2.times(t2).eq(x)) {
+                    r = t2;
                     break;
                   }
                 }
@@ -5631,13 +5649,13 @@ var require_util2 = __commonJS((exports) => {
     }
   }
   exports.LRUCache = LRUCache;
-  _LRUCache_cache = new WeakMap, _LRUCache_instances = new WeakSet, _LRUCache_moveToEnd = function _LRUCache_moveToEnd(key, value) {
+  _LRUCache_cache = new WeakMap, _LRUCache_instances = new WeakSet, _LRUCache_moveToEnd = function _LRUCache_moveToEnd2(key, value) {
     __classPrivateFieldGet(this, _LRUCache_cache, "f").delete(key);
     __classPrivateFieldGet(this, _LRUCache_cache, "f").set(key, {
       value,
       lastAccessed: Date.now()
     });
-  }, _LRUCache_evict = function _LRUCache_evict() {
+  }, _LRUCache_evict = function _LRUCache_evict2() {
     const cutoffDate = this.maxAge ? Date.now() - this.maxAge : 0;
     let oldestItem = __classPrivateFieldGet(this, _LRUCache_cache, "f").entries().next();
     while (!oldestItem.done && (__classPrivateFieldGet(this, _LRUCache_cache, "f").size > this.capacity || oldestItem.value[1].lastAccessed < cutoffDate)) {
@@ -6224,35 +6242,35 @@ var require_oauth2client = __commonJS((exports) => {
       if (!maxExpiry) {
         maxExpiry = OAuth2Client.DEFAULT_MAX_TOKEN_LIFETIME_SECS_;
       }
-      const segments = jwt.split(".");
-      if (segments.length !== 3) {
+      const segments2 = jwt.split(".");
+      if (segments2.length !== 3) {
         throw new Error("Wrong number of segments in token: " + jwt);
       }
-      const signed = segments[0] + "." + segments[1];
-      let signature = segments[2];
+      const signed = segments2[0] + "." + segments2[1];
+      let signature = segments2[2];
       let envelope;
       let payload;
       try {
-        envelope = JSON.parse(crypto2.decodeBase64StringUtf8(segments[0]));
+        envelope = JSON.parse(crypto2.decodeBase64StringUtf8(segments2[0]));
       } catch (err) {
         if (err instanceof Error) {
-          err.message = `Can't parse token envelope: ${segments[0]}': ${err.message}`;
+          err.message = `Can't parse token envelope: ${segments2[0]}': ${err.message}`;
         }
         throw err;
       }
       if (!envelope) {
-        throw new Error("Can't parse token envelope: " + segments[0]);
+        throw new Error("Can't parse token envelope: " + segments2[0]);
       }
       try {
-        payload = JSON.parse(crypto2.decodeBase64StringUtf8(segments[1]));
+        payload = JSON.parse(crypto2.decodeBase64StringUtf8(segments2[1]));
       } catch (err) {
         if (err instanceof Error) {
-          err.message = `Can't parse token payload '${segments[0]}`;
+          err.message = `Can't parse token payload '${segments2[0]}`;
         }
         throw err;
       }
       if (!payload) {
-        throw new Error("Can't parse token payload: " + segments[1]);
+        throw new Error("Can't parse token payload: " + segments2[1]);
       }
       if (!Object.prototype.hasOwnProperty.call(certs, envelope.kid)) {
         throw new Error("No pem found for envelope: " + JSON.stringify(envelope));
@@ -6690,12 +6708,12 @@ var require_jwa = __commonJS((exports, module) => {
     };
   }
   var bufferEqual;
-  var timingSafeEqual = "timingSafeEqual" in crypto2 ? function timingSafeEqual(a, b) {
+  var timingSafeEqual = "timingSafeEqual" in crypto2 ? function timingSafeEqual2(a, b) {
     if (a.byteLength !== b.byteLength) {
       return false;
     }
     return crypto2.timingSafeEqual(a, b);
-  } : function timingSafeEqual(a, b) {
+  } : function timingSafeEqual2(a, b) {
     if (!bufferEqual) {
       bufferEqual = require_buffer_equal_constant_time();
     }
@@ -7130,7 +7148,7 @@ var require_src5 = __commonJS((exports) => {
       }, opts);
       if (callback) {
         const cb = callback;
-        __classPrivateFieldGet(this, _GoogleToken_instances, "m", _GoogleToken_getTokenAsync).call(this, opts).then((t) => cb(null, t), callback);
+        __classPrivateFieldGet(this, _GoogleToken_instances, "m", _GoogleToken_getTokenAsync).call(this, opts).then((t2) => cb(null, t2), callback);
         return;
       }
       return __classPrivateFieldGet(this, _GoogleToken_instances, "m", _GoogleToken_getTokenAsync).call(this, opts);
@@ -7171,7 +7189,7 @@ var require_src5 = __commonJS((exports) => {
     }
   }
   exports.GoogleToken = GoogleToken;
-  _GoogleToken_inFlightRequest = new WeakMap, _GoogleToken_instances = new WeakSet, _GoogleToken_getTokenAsync = async function _GoogleToken_getTokenAsync(opts) {
+  _GoogleToken_inFlightRequest = new WeakMap, _GoogleToken_instances = new WeakSet, _GoogleToken_getTokenAsync = async function _GoogleToken_getTokenAsync2(opts) {
     if (__classPrivateFieldGet(this, _GoogleToken_inFlightRequest, "f") && !opts.forceRefresh) {
       return __classPrivateFieldGet(this, _GoogleToken_inFlightRequest, "f");
     }
@@ -7180,7 +7198,7 @@ var require_src5 = __commonJS((exports) => {
     } finally {
       __classPrivateFieldSet(this, _GoogleToken_inFlightRequest, undefined, "f");
     }
-  }, _GoogleToken_getTokenAsyncInner = async function _GoogleToken_getTokenAsyncInner(opts) {
+  }, _GoogleToken_getTokenAsyncInner = async function _GoogleToken_getTokenAsyncInner2(opts) {
     if (this.isTokenExpiring() === false && opts.forceRefresh === false) {
       return Promise.resolve(this.rawToken);
     }
@@ -7196,11 +7214,11 @@ var require_src5 = __commonJS((exports) => {
       }
     }
     return __classPrivateFieldGet(this, _GoogleToken_instances, "m", _GoogleToken_requestToken).call(this);
-  }, _GoogleToken_ensureEmail = function _GoogleToken_ensureEmail() {
+  }, _GoogleToken_ensureEmail = function _GoogleToken_ensureEmail2() {
     if (!this.iss) {
       throw new ErrorWithCode("email is required.", "MISSING_CREDENTIALS");
     }
-  }, _GoogleToken_revokeTokenAsync = async function _GoogleToken_revokeTokenAsync() {
+  }, _GoogleToken_revokeTokenAsync = async function _GoogleToken_revokeTokenAsync2() {
     if (!this.accessToken) {
       throw new Error("No token to revoke.");
     }
@@ -7217,7 +7235,7 @@ var require_src5 = __commonJS((exports) => {
       scope: this.scope,
       additionalClaims: this.additionalClaims
     });
-  }, _GoogleToken_configure = function _GoogleToken_configure(options = {}) {
+  }, _GoogleToken_configure = function _GoogleToken_configure2(options = {}) {
     this.keyFile = options.keyFile;
     this.key = options.key;
     this.rawToken = undefined;
@@ -7233,7 +7251,7 @@ var require_src5 = __commonJS((exports) => {
     if (options.transporter) {
       this.transporter = options.transporter;
     }
-  }, _GoogleToken_requestToken = async function _GoogleToken_requestToken() {
+  }, _GoogleToken_requestToken = async function _GoogleToken_requestToken2() {
     var _a, _b;
     const iat = Math.floor(new Date().getTime() / 1000);
     const additionalClaims = this.additionalClaims || {};
@@ -8230,7 +8248,7 @@ var require_baseexternalclient = __commonJS((exports) => {
     }
   }
   exports.BaseExternalAccountClient = BaseExternalAccountClient;
-  _BaseExternalAccountClient_pendingAccessToken = new WeakMap, _BaseExternalAccountClient_instances = new WeakSet, _BaseExternalAccountClient_internalRefreshAccessTokenAsync = async function _BaseExternalAccountClient_internalRefreshAccessTokenAsync() {
+  _BaseExternalAccountClient_pendingAccessToken = new WeakMap, _BaseExternalAccountClient_instances = new WeakSet, _BaseExternalAccountClient_internalRefreshAccessTokenAsync = async function _BaseExternalAccountClient_internalRefreshAccessTokenAsync2() {
     const subjectToken = await this.retrieveSubjectToken();
     const stsCredentialsOptions = {
       grantType: STS_GRANT_TYPE,
@@ -8607,7 +8625,7 @@ var require_defaultawssecuritycredentialssupplier = __commonJS((exports) => {
     }
   }
   exports.DefaultAwsSecurityCredentialsSupplier = DefaultAwsSecurityCredentialsSupplier;
-  _DefaultAwsSecurityCredentialsSupplier_instances = new WeakSet, _DefaultAwsSecurityCredentialsSupplier_getImdsV2SessionToken = async function _DefaultAwsSecurityCredentialsSupplier_getImdsV2SessionToken(transporter) {
+  _DefaultAwsSecurityCredentialsSupplier_instances = new WeakSet, _DefaultAwsSecurityCredentialsSupplier_getImdsV2SessionToken = async function _DefaultAwsSecurityCredentialsSupplier_getImdsV2SessionToken2(transporter) {
     const opts = {
       ...this.additionalGaxiosOptions,
       url: this.imdsV2SessionTokenUrl,
@@ -8617,7 +8635,7 @@ var require_defaultawssecuritycredentialssupplier = __commonJS((exports) => {
     };
     const response = await transporter.request(opts);
     return response.data;
-  }, _DefaultAwsSecurityCredentialsSupplier_getAwsRoleName = async function _DefaultAwsSecurityCredentialsSupplier_getAwsRoleName(headers, transporter) {
+  }, _DefaultAwsSecurityCredentialsSupplier_getAwsRoleName = async function _DefaultAwsSecurityCredentialsSupplier_getAwsRoleName2(headers, transporter) {
     if (!this.securityCredentialsUrl) {
       throw new Error("Unable to determine AWS role name due to missing " + '"options.credential_source.url"');
     }
@@ -8630,7 +8648,7 @@ var require_defaultawssecuritycredentialssupplier = __commonJS((exports) => {
     };
     const response = await transporter.request(opts);
     return response.data;
-  }, _DefaultAwsSecurityCredentialsSupplier_retrieveAwsSecurityCredentials = async function _DefaultAwsSecurityCredentialsSupplier_retrieveAwsSecurityCredentials(roleName, headers, transporter) {
+  }, _DefaultAwsSecurityCredentialsSupplier_retrieveAwsSecurityCredentials = async function _DefaultAwsSecurityCredentialsSupplier_retrieveAwsSecurityCredentials2(roleName, headers, transporter) {
     const response = await transporter.request({
       ...this.additionalGaxiosOptions,
       url: `${this.securityCredentialsUrl}/${roleName}`,
@@ -8638,9 +8656,9 @@ var require_defaultawssecuritycredentialssupplier = __commonJS((exports) => {
       headers
     });
     return response.data;
-  }, _DefaultAwsSecurityCredentialsSupplier_regionFromEnv_get = function _DefaultAwsSecurityCredentialsSupplier_regionFromEnv_get() {
+  }, _DefaultAwsSecurityCredentialsSupplier_regionFromEnv_get = function _DefaultAwsSecurityCredentialsSupplier_regionFromEnv_get2() {
     return process.env["AWS_REGION"] || process.env["AWS_DEFAULT_REGION"] || null;
-  }, _DefaultAwsSecurityCredentialsSupplier_securityCredentialsFromEnv_get = function _DefaultAwsSecurityCredentialsSupplier_securityCredentialsFromEnv_get() {
+  }, _DefaultAwsSecurityCredentialsSupplier_securityCredentialsFromEnv_get = function _DefaultAwsSecurityCredentialsSupplier_securityCredentialsFromEnv_get2() {
     if (process.env["AWS_ACCESS_KEY_ID"] && process.env["AWS_SECRET_ACCESS_KEY"]) {
       return {
         accessKeyId: process.env["AWS_ACCESS_KEY_ID"],
@@ -9747,14 +9765,14 @@ var require_googleauth = __commonJS((exports) => {
     }
   }
   exports.GoogleAuth = GoogleAuth;
-  _GoogleAuth_pendingAuthClient = new WeakMap, _GoogleAuth_instances = new WeakSet, _GoogleAuth_prepareAndCacheClient = async function _GoogleAuth_prepareAndCacheClient(credential, quotaProjectIdOverride = process.env["GOOGLE_CLOUD_QUOTA_PROJECT"] || null) {
+  _GoogleAuth_pendingAuthClient = new WeakMap, _GoogleAuth_instances = new WeakSet, _GoogleAuth_prepareAndCacheClient = async function _GoogleAuth_prepareAndCacheClient2(credential, quotaProjectIdOverride = process.env["GOOGLE_CLOUD_QUOTA_PROJECT"] || null) {
     const projectId = await this.getProjectIdOptional();
     if (quotaProjectIdOverride) {
       credential.quotaProjectId = quotaProjectIdOverride;
     }
     this.cachedCredential = credential;
     return { credential, projectId };
-  }, _GoogleAuth_determineClient = async function _GoogleAuth_determineClient() {
+  }, _GoogleAuth_determineClient = async function _GoogleAuth_determineClient2() {
     if (this.jsonContent) {
       return this._cacheClientFromJSON(this.jsonContent, this.clientOptions);
     } else if (this.keyFilename) {
@@ -10635,13 +10653,13 @@ var require_side_channel_list = __commonJS((exports, module) => {
     if (!objects) {
       return;
     }
-    var node = listGetNode(objects, key);
-    return node && node.value;
+    var node2 = listGetNode(objects, key);
+    return node2 && node2.value;
   };
   var listSet = function(objects, key, value) {
-    var node = listGetNode(objects, key);
-    if (node) {
-      node.value = value;
+    var node2 = listGetNode(objects, key);
+    if (node2) {
+      node2.value = value;
     } else {
       objects.next = {
         key,
@@ -10762,7 +10780,7 @@ var require_round = __commonJS((exports, module) => {
 
 // node_modules/math-intrinsics/isNaN.js
 var require_isNaN = __commonJS((exports, module) => {
-  module.exports = Number.isNaN || function isNaN(a) {
+  module.exports = Number.isNaN || function isNaN2(a) {
     return a !== a;
   };
 });
@@ -10896,7 +10914,7 @@ var require_implementation = __commonJS((exports, module) => {
   var toStr = Object.prototype.toString;
   var max = Math.max;
   var funcType = "[object Function]";
-  var concatty = function concatty(a, b) {
+  var concatty = function concatty2(a, b) {
     var arr = [];
     for (var i = 0;i < a.length; i += 1) {
       arr[i] = a[i];
@@ -10906,7 +10924,7 @@ var require_implementation = __commonJS((exports, module) => {
     }
     return arr;
   };
-  var slicy = function slicy(arrLike, offset) {
+  var slicy = function slicy2(arrLike, offset) {
     var arr = [];
     for (var i = offset || 0, j = 0;i < arrLike.length; i += 1, j += 1) {
       arr[j] = arrLike[i];
@@ -10947,7 +10965,7 @@ var require_implementation = __commonJS((exports, module) => {
     }
     bound = Function("binder", "return function (" + joiny(boundArgs, ",") + "){ return binder.apply(this,arguments); }")(binder);
     if (target.prototype) {
-      var Empty = function Empty() {};
+      var Empty = function Empty2() {};
       Empty.prototype = target.prototype;
       bound.prototype = new Empty;
       Empty.prototype = null;
@@ -11186,7 +11204,7 @@ var require_get_intrinsic = __commonJS((exports, module) => {
     }
   }
   var errorProto;
-  var doEval = function doEval(name) {
+  var doEval = function doEval2(name) {
     var value;
     if (name === "%AsyncFunction%") {
       value = getEvalledConstructor("async function () {}");
@@ -11195,12 +11213,12 @@ var require_get_intrinsic = __commonJS((exports, module) => {
     } else if (name === "%AsyncGeneratorFunction%") {
       value = getEvalledConstructor("async function* () {}");
     } else if (name === "%AsyncGenerator%") {
-      var fn = doEval("%AsyncGeneratorFunction%");
+      var fn = doEval2("%AsyncGeneratorFunction%");
       if (fn) {
         value = fn.prototype;
       }
     } else if (name === "%AsyncIteratorPrototype%") {
-      var gen = doEval("%AsyncGenerator%");
+      var gen = doEval2("%AsyncGenerator%");
       if (gen && getProto) {
         value = getProto(gen.prototype);
       }
@@ -11271,7 +11289,7 @@ var require_get_intrinsic = __commonJS((exports, module) => {
   var $exec = bind.call($call, RegExp.prototype.exec);
   var rePropName = /[^%.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|%$))/g;
   var reEscapeChar = /\\(\\)?/g;
-  var stringToPath = function stringToPath(string) {
+  var stringToPath = function stringToPath2(string) {
     var first = $strSlice(string, 0, 1);
     var last = $strSlice(string, -1);
     if (first === "%" && last !== "%") {
@@ -11285,7 +11303,7 @@ var require_get_intrinsic = __commonJS((exports, module) => {
     });
     return result;
   };
-  var getBaseIntrinsic = function getBaseIntrinsic(name, allowMissing) {
+  var getBaseIntrinsic = function getBaseIntrinsic2(name, allowMissing) {
     var intrinsicName = name;
     var alias;
     if (hasOwn(LEGACY_ALIASES, intrinsicName)) {
@@ -11572,17 +11590,17 @@ var require_utils = __commonJS((exports, module) => {
   var has = Object.prototype.hasOwnProperty;
   var isArray = Array.isArray;
   var overflowChannel = getSideChannel();
-  var markOverflow = function markOverflow(obj, maxIndex) {
+  var markOverflow = function markOverflow2(obj, maxIndex) {
     overflowChannel.set(obj, maxIndex);
     return obj;
   };
-  var isOverflow = function isOverflow(obj) {
+  var isOverflow = function isOverflow2(obj) {
     return overflowChannel.has(obj);
   };
-  var getMaxIndex = function getMaxIndex(obj) {
+  var getMaxIndex = function getMaxIndex2(obj) {
     return overflowChannel.get(obj);
   };
-  var setMaxIndex = function setMaxIndex(obj, maxIndex) {
+  var setMaxIndex = function setMaxIndex2(obj, maxIndex) {
     overflowChannel.set(obj, maxIndex);
   };
   var hexTable = function() {
@@ -11592,7 +11610,7 @@ var require_utils = __commonJS((exports, module) => {
     }
     return array;
   }();
-  var compactQueue = function compactQueue(queue) {
+  var compactQueue = function compactQueue2(queue) {
     while (queue.length > 1) {
       var item = queue.pop();
       var obj = item.obj[item.prop];
@@ -11607,7 +11625,7 @@ var require_utils = __commonJS((exports, module) => {
       }
     }
   };
-  var arrayToObject = function arrayToObject(source, options) {
+  var arrayToObject = function arrayToObject2(source, options) {
     var obj = options && options.plainObjects ? { __proto__: null } : {};
     for (var i = 0;i < source.length; ++i) {
       if (typeof source[i] !== "undefined") {
@@ -11616,7 +11634,7 @@ var require_utils = __commonJS((exports, module) => {
     }
     return obj;
   };
-  var setProperty = function setProperty(obj, key, value) {
+  var setProperty = function setProperty2(obj, key, value) {
     if (key === "__proto__" && defineProperty) {
       defineProperty(obj, key, {
         configurable: true,
@@ -11628,7 +11646,7 @@ var require_utils = __commonJS((exports, module) => {
       obj[key] = value;
     }
   };
-  var merge = function merge(target, source, options) {
+  var merge = function merge2(target, source, options) {
     if (!source) {
       return target;
     }
@@ -11685,7 +11703,7 @@ var require_utils = __commonJS((exports, module) => {
         if (has.call(target, i)) {
           var targetItem = target[i];
           if (targetItem && typeof targetItem === "object" && item && typeof item === "object") {
-            target[i] = merge(targetItem, item, options);
+            target[i] = merge2(targetItem, item, options);
           } else {
             target[target.length] = item;
           }
@@ -11704,7 +11722,7 @@ var require_utils = __commonJS((exports, module) => {
     return Object.keys(source).reduce(function(acc, key) {
       var value = source[key];
       if (has.call(acc, key)) {
-        setProperty(acc, key, merge(acc[key], value, options));
+        setProperty(acc, key, merge2(acc[key], value, options));
       } else {
         setProperty(acc, key, value);
       }
@@ -11738,7 +11756,7 @@ var require_utils = __commonJS((exports, module) => {
     }
   };
   var limit = 1024;
-  var encode = function encode(str, defaultEncoder, charset, kind, format) {
+  var encode = function encode2(str, defaultEncoder, charset, kind, format) {
     if (str.length === 0) {
       return str;
     }
@@ -11790,7 +11808,7 @@ var require_utils = __commonJS((exports, module) => {
     }
     return out;
   };
-  var compact = function compact(value) {
+  var compact = function compact2(value) {
     var queue = [{ obj: { o: value }, prop: "o" }];
     var refs = getSideChannel();
     for (var i = 0;i < queue.length; ++i) {
@@ -11809,16 +11827,16 @@ var require_utils = __commonJS((exports, module) => {
     compactQueue(queue);
     return value;
   };
-  var isRegExp = function isRegExp(obj) {
+  var isRegExp = function isRegExp2(obj) {
     return Object.prototype.toString.call(obj) === "[object RegExp]";
   };
-  var isBuffer = function isBuffer(obj) {
+  var isBuffer = function isBuffer2(obj) {
     if (!obj || typeof obj !== "object") {
       return false;
     }
     return !!(obj.constructor && obj.constructor.isBuffer && obj.constructor.isBuffer(obj));
   };
-  var combine = function combine(a, b, arrayLimit, plainObjects, throwOnLimitExceeded) {
+  var combine = function combine2(a, b, arrayLimit, plainObjects, throwOnLimitExceeded) {
     if (isOverflow(a)) {
       if (throwOnLimitExceeded) {
         throw new RangeError("Array limit exceeded. Only " + arrayLimit + " element" + (arrayLimit === 1 ? "" : "s") + " allowed in an array.");
@@ -11837,7 +11855,7 @@ var require_utils = __commonJS((exports, module) => {
     }
     return result;
   };
-  var maybeMap = function maybeMap(val, fn) {
+  var maybeMap = function maybeMap2(val, fn) {
     if (isArray(val)) {
       var mapped = [];
       for (var i = 0;i < val.length; i += 1) {
@@ -11911,11 +11929,11 @@ var require_stringify3 = __commonJS((exports, module) => {
     skipNulls: false,
     strictNullHandling: false
   };
-  var isNonNullishPrimitive = function isNonNullishPrimitive(v) {
+  var isNonNullishPrimitive = function isNonNullishPrimitive2(v) {
     return typeof v === "string" || typeof v === "number" || typeof v === "boolean" || typeof v === "symbol" || typeof v === "bigint";
   };
   var sentinel = {};
-  var stringify = function stringify(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel) {
+  var stringify = function stringify2(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel) {
     var obj = object;
     var tmpSc = sideChannel;
     var step = 0;
@@ -11993,11 +12011,11 @@ var require_stringify3 = __commonJS((exports, module) => {
       sideChannel.set(object, step);
       var valueSideChannel = getSideChannel();
       valueSideChannel.set(sentinel, sideChannel);
-      pushToArray(values, stringify(value, keyPrefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, generateArrayPrefix === "comma" && encodeValuesOnly && isArray(obj) ? null : encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, valueSideChannel));
+      pushToArray(values, stringify2(value, keyPrefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, generateArrayPrefix === "comma" && encodeValuesOnly && isArray(obj) ? null : encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, valueSideChannel));
     }
     return values;
   };
-  var normalizeStringifyOptions = function normalizeStringifyOptions(opts) {
+  var normalizeStringifyOptions = function normalizeStringifyOptions2(opts) {
     if (!opts) {
       return defaults;
     }
@@ -12270,7 +12288,7 @@ var require_parse3 = __commonJS((exports, module) => {
     }
     return leaf;
   };
-  var splitKeyIntoSegments = function splitKeyIntoSegments(originalKey, options) {
+  var splitKeyIntoSegments = function splitKeyIntoSegments2(originalKey, options) {
     var key = options.allowDots ? originalKey.replace(/\.([^.[]+)/g, "[$1]") : originalKey;
     if (options.depth <= 0) {
       if (!options.plainObjects && has.call(Object.prototype, key)) {
@@ -12280,7 +12298,7 @@ var require_parse3 = __commonJS((exports, module) => {
       }
       return [key];
     }
-    var segments = [];
+    var segments2 = [];
     var first = key.indexOf("[");
     var parent = first >= 0 ? key.slice(0, first) : key;
     if (parent) {
@@ -12289,7 +12307,7 @@ var require_parse3 = __commonJS((exports, module) => {
           return;
         }
       }
-      segments[segments.length] = parent;
+      segments2[segments2.length] = parent;
     }
     var n = key.length;
     var open = first;
@@ -12311,15 +12329,15 @@ var require_parse3 = __commonJS((exports, module) => {
         i += 1;
       }
       if (close < 0) {
-        segments[segments.length] = "[" + key.slice(open) + "]";
-        return segments;
+        segments2[segments2.length] = "[" + key.slice(open) + "]";
+        return segments2;
       }
       var seg = key.slice(open, close + 1);
       var content = seg.slice(1, -1);
       if (!options.plainObjects && has.call(Object.prototype, content) && !options.allowPrototypes) {
         return;
       }
-      segments[segments.length] = seg;
+      segments2[segments2.length] = seg;
       collected += 1;
       open = key.indexOf("[", close + 1);
     }
@@ -12327,9 +12345,9 @@ var require_parse3 = __commonJS((exports, module) => {
       if (options.strictDepth === true) {
         throw new RangeError("Input depth exceeded depth option of " + options.depth + " and strictDepth is true");
       }
-      segments[segments.length] = "[" + key.slice(open) + "]";
+      segments2[segments2.length] = "[" + key.slice(open) + "]";
     }
-    return segments;
+    return segments2;
   };
   var parseKeys = function parseQueryStringKeys(givenKey, val, options, valuesParsed) {
     if (!givenKey) {
@@ -12341,7 +12359,7 @@ var require_parse3 = __commonJS((exports, module) => {
     }
     return parseObject(keys, val, options, valuesParsed);
   };
-  var normalizeParseOptions = function normalizeParseOptions(opts) {
+  var normalizeParseOptions = function normalizeParseOptions2(opts) {
     if (!opts) {
       return defaults;
     }
@@ -697862,16 +697880,16 @@ class Jsep {
     error.description = message;
     throw error;
   }
-  runHook(name, node) {
+  runHook(name, node2) {
     if (Jsep.hooks[name]) {
       const env = {
         context: this,
-        node
+        node: node2
       };
       Jsep.hooks.run(name, env);
       return env.node;
     }
-    return node;
+    return node2;
   }
   searchHook(name) {
     if (Jsep.hooks[name]) {
@@ -697895,21 +697913,21 @@ class Jsep {
   parse() {
     this.runHook("before-all");
     const nodes = this.gobbleExpressions();
-    const node = nodes.length === 1 ? nodes[0] : {
+    const node2 = nodes.length === 1 ? nodes[0] : {
       type: Jsep.COMPOUND,
       body: nodes
     };
-    return this.runHook("after-all", node);
+    return this.runHook("after-all", node2);
   }
   gobbleExpressions(untilICode) {
-    let nodes = [], ch_i, node;
+    let nodes = [], ch_i, node2;
     while (this.index < this.expr.length) {
       ch_i = this.code;
       if (ch_i === Jsep.SEMCOL_CODE || ch_i === Jsep.COMMA_CODE) {
         this.index++;
       } else {
-        if (node = this.gobbleExpression()) {
-          nodes.push(node);
+        if (node2 = this.gobbleExpression()) {
+          nodes.push(node2);
         } else if (this.index < this.expr.length) {
           if (ch_i === untilICode) {
             break;
@@ -697921,9 +697939,9 @@ class Jsep {
     return nodes;
   }
   gobbleExpression() {
-    const node = this.searchHook("gobble-expression") || this.gobbleBinaryExpression();
+    const node2 = this.searchHook("gobble-expression") || this.gobbleBinaryExpression();
     this.gobbleSpaces();
-    return this.runHook("after-expression", node);
+    return this.runHook("after-expression", node2);
   }
   gobbleBinaryOp() {
     this.gobbleSpaces();
@@ -697939,7 +697957,7 @@ class Jsep {
     return false;
   }
   gobbleBinaryExpression() {
-    let node, biop, prec, stack, biop_info, left, right, i, cur_biop;
+    let node2, biop, prec, stack, biop_info, left, right, i, cur_biop;
     left = this.gobbleToken();
     if (!left) {
       return left;
@@ -697975,48 +697993,48 @@ class Jsep {
         right = stack.pop();
         biop = stack.pop().value;
         left = stack.pop();
-        node = {
+        node2 = {
           type: Jsep.BINARY_EXP,
           operator: biop,
           left,
           right
         };
-        stack.push(node);
+        stack.push(node2);
       }
-      node = this.gobbleToken();
-      if (!node) {
+      node2 = this.gobbleToken();
+      if (!node2) {
         this.throwError("Expected expression after " + cur_biop);
       }
-      stack.push(biop_info, node);
+      stack.push(biop_info, node2);
     }
     i = stack.length - 1;
-    node = stack[i];
+    node2 = stack[i];
     while (i > 1) {
-      node = {
+      node2 = {
         type: Jsep.BINARY_EXP,
         operator: stack[i - 1].value,
         left: stack[i - 2],
-        right: node
+        right: node2
       };
       i -= 2;
     }
-    return node;
+    return node2;
   }
   gobbleToken() {
-    let ch, to_check, tc_len, node;
+    let ch, to_check, tc_len, node2;
     this.gobbleSpaces();
-    node = this.searchHook("gobble-token");
-    if (node) {
-      return this.runHook("after-token", node);
+    node2 = this.searchHook("gobble-token");
+    if (node2) {
+      return this.runHook("after-token", node2);
     }
     ch = this.code;
     if (Jsep.isDecimalDigit(ch) || ch === Jsep.PERIOD_CODE) {
       return this.gobbleNumericLiteral();
     }
     if (ch === Jsep.SQUOTE_CODE || ch === Jsep.DQUOTE_CODE) {
-      node = this.gobbleStringLiteral();
+      node2 = this.gobbleStringLiteral();
     } else if (ch === Jsep.OBRACK_CODE) {
-      node = this.gobbleArray();
+      node2 = this.gobbleArray();
     } else {
       to_check = this.expr.substr(this.index, Jsep.max_unop_len);
       tc_len = to_check.length;
@@ -698037,29 +698055,29 @@ class Jsep {
         to_check = to_check.substr(0, --tc_len);
       }
       if (Jsep.isIdentifierStart(ch)) {
-        node = this.gobbleIdentifier();
-        if (Jsep.literals.hasOwnProperty(node.name)) {
-          node = {
+        node2 = this.gobbleIdentifier();
+        if (Jsep.literals.hasOwnProperty(node2.name)) {
+          node2 = {
             type: Jsep.LITERAL,
-            value: Jsep.literals[node.name],
-            raw: node.name
+            value: Jsep.literals[node2.name],
+            raw: node2.name
           };
-        } else if (node.name === Jsep.this_str) {
-          node = {
+        } else if (node2.name === Jsep.this_str) {
+          node2 = {
             type: Jsep.THIS_EXP
           };
         }
       } else if (ch === Jsep.OPAREN_CODE) {
-        node = this.gobbleGroup();
+        node2 = this.gobbleGroup();
       }
     }
-    if (!node) {
+    if (!node2) {
       return this.runHook("after-token", false);
     }
-    node = this.gobbleTokenProperty(node);
-    return this.runHook("after-token", node);
+    node2 = this.gobbleTokenProperty(node2);
+    return this.runHook("after-token", node2);
   }
-  gobbleTokenProperty(node) {
+  gobbleTokenProperty(node2) {
     this.gobbleSpaces();
     let ch = this.code;
     while (ch === Jsep.PERIOD_CODE || ch === Jsep.OBRACK_CODE || ch === Jsep.OPAREN_CODE || ch === Jsep.QUMARK_CODE) {
@@ -698075,13 +698093,13 @@ class Jsep {
       }
       this.index++;
       if (ch === Jsep.OBRACK_CODE) {
-        node = {
+        node2 = {
           type: Jsep.MEMBER_EXP,
           computed: true,
-          object: node,
+          object: node2,
           property: this.gobbleExpression()
         };
-        if (!node.property) {
+        if (!node2.property) {
           this.throwError('Unexpected "' + this.char + '"');
         }
         this.gobbleSpaces();
@@ -698091,30 +698109,30 @@ class Jsep {
         }
         this.index++;
       } else if (ch === Jsep.OPAREN_CODE) {
-        node = {
+        node2 = {
           type: Jsep.CALL_EXP,
           arguments: this.gobbleArguments(Jsep.CPAREN_CODE),
-          callee: node
+          callee: node2
         };
       } else if (ch === Jsep.PERIOD_CODE || optional) {
         if (optional) {
           this.index--;
         }
         this.gobbleSpaces();
-        node = {
+        node2 = {
           type: Jsep.MEMBER_EXP,
           computed: false,
-          object: node,
+          object: node2,
           property: this.gobbleIdentifier()
         };
       }
       if (optional) {
-        node.optional = true;
+        node2.optional = true;
       }
       this.gobbleSpaces();
       ch = this.code;
     }
-    return node;
+    return node2;
   }
   gobbleNumericLiteral() {
     let number = "", ch, chCode;
@@ -698250,11 +698268,11 @@ class Jsep {
       } else if (args.length !== separator_count && separator_count !== 0) {
         this.throwError("Expected comma");
       } else {
-        const node = this.gobbleExpression();
-        if (!node || node.type === Jsep.COMPOUND) {
+        const node2 = this.gobbleExpression();
+        if (!node2 || node2.type === Jsep.COMPOUND) {
           this.throwError("Expected comma");
         }
-        args.push(node);
+        args.push(node2);
       }
     }
     if (!closed) {
@@ -698570,13 +698588,13 @@ var init_index_node_esm = __esm(() => {
           updateBinariesToAssignments(env.node);
         }
       });
-      function updateBinariesToAssignments(node) {
-        if (plugin.assignmentOperators.has(node.operator)) {
-          node.type = "AssignmentExpression";
-          updateBinariesToAssignments(node.left);
-          updateBinariesToAssignments(node.right);
-        } else if (!node.operator) {
-          Object.values(node).forEach((val) => {
+      function updateBinariesToAssignments(node2) {
+        if (plugin.assignmentOperators.has(node2.operator)) {
+          node2.type = "AssignmentExpression";
+          updateBinariesToAssignments(node2.left);
+          updateBinariesToAssignments(node2.right);
+        } else if (!node2.operator) {
+          Object.values(node2).forEach((val) => {
             if (val && typeof val === "object") {
               updateBinariesToAssignments(val);
             }
@@ -698837,8 +698855,8 @@ var init_index_node_esm = __esm(() => {
     const ret = [];
     function addRet(elems) {
       if (Array.isArray(elems)) {
-        elems.forEach((t) => {
-          ret.push(t);
+        elems.forEach((t2) => {
+          ret.push(t2);
         });
       } else {
         ret.push(elems);
@@ -698979,19 +698997,19 @@ var init_index_node_esm = __esm(() => {
       addRet(this._trace(x, val[loc], push(path, loc), val, loc, callback, hasArrExpr, true));
     }
     if (this._hasParentSelector) {
-      for (let t = 0;t < ret.length; t++) {
-        const rett = ret[t];
+      for (let t2 = 0;t2 < ret.length; t2++) {
+        const rett = ret[t2];
         if (rett && rett.isParentSelector) {
           const tmp = this._trace(rett.expr, val, rett.path, parent, parentPropName, callback, hasArrExpr);
           if (Array.isArray(tmp)) {
-            ret[t] = tmp[0];
+            ret[t2] = tmp[0];
             const tl = tmp.length;
             for (let tt = 1;tt < tl; tt++) {
-              t++;
-              ret.splice(t, 0, tmp[tt]);
+              t2++;
+              ret.splice(t2, 0, tmp[tt]);
             }
           } else {
-            ret[t] = tmp;
+            ret[t2] = tmp;
           }
         }
       }
@@ -699021,8 +699039,8 @@ var init_index_node_esm = __esm(() => {
     const ret = [];
     for (let i = start;i < end; i += step) {
       const tmp = this._trace(unshift(i, expr), val, path, parent, parentPropName, callback, true);
-      tmp.forEach((t) => {
-        ret.push(t);
+      tmp.forEach((t2) => {
+        ret.push(t2);
       });
     }
     return ret;
@@ -699116,175 +699134,510 @@ var init_index_node_esm = __esm(() => {
   JSONPath.prototype.vm = vm;
 });
 
-// ../../../../.kit/plugins/_shared/rpc.ts
-import { createInterface } from "readline";
-var MAX_FRAME_BYTES = 16 * 1024 * 1024;
+// kit-plugin.ts
+var PROTOCOL_VERSION = 2;
+var SETUP_STOP_GRACE_MS = 1500;
 
-class KitPluginEndpoint {
-  sequence = 0;
-  initialized = false;
-  stopping = false;
-  pending = new Map;
-  activeRequests = new Map;
-  handlers = new Map;
-  notificationHandlers = new Map;
-  initializeHandler;
-  afterInitializeHandler;
-  shutdownHandler;
-  input;
-  onInitialize(handler, afterInitialize) {
-    this.initializeHandler = handler;
-    this.afterInitializeHandler = afterInitialize;
+class KitError extends Error {
+  code;
+  data;
+  constructor(code, message, data) {
+    super(message);
+    this.name = "KitError";
+    this.code = code;
+    this.data = data;
   }
-  onShutdown(handler) {
-    this.shutdownHandler = handler;
-  }
-  onRequest(method, handler) {
-    this.handlers.set(method, handler);
-  }
-  onNotification(method, handler) {
-    this.notificationHandlers.set(method, handler);
-  }
-  async request(method, params) {
-    if (!this.initialized || this.stopping) {
-      throw new Error("Plugin endpoint is not ready");
+  get reason() {
+    const data = this.data;
+    if (data && typeof data === "object" && !Array.isArray(data) && typeof data.reason === "string") {
+      return data.reason;
     }
-    const id = `plugin-${++this.sequence}`;
-    const result = new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
-    });
-    this.send({ jsonrpc: "2.0", id, method, ...params ? { params } : {} });
-    return result;
-  }
-  notify(method, params) {
-    if (!this.initialized || this.stopping)
-      return;
-    this.send({ jsonrpc: "2.0", method, params });
-  }
-  toast(title, variant = "info", subtitle) {
-    this.notify("kit/ui/toast", {
-      title,
-      variant,
-      ...subtitle ? { subtitle } : {}
-    });
-  }
-  start() {
-    const input = createInterface({ input: process.stdin, crlfDelay: Infinity });
-    this.input = input;
-    input.on("line", (line) => {
-      if (!line.trim())
-        return;
-      if (Buffer.byteLength(line, "utf8") > MAX_FRAME_BYTES) {
-        console.error("Inbound JSON-RPC frame exceeded 16 MiB");
-        process.exitCode = 1;
-        input.close();
-        return;
-      }
-      try {
-        const frame = JSON.parse(line);
-        for (const message of Array.isArray(frame) ? frame : [frame]) {
-          this.handle(message);
-        }
-      } catch (error) {
-        console.error("Invalid JSON-RPC input:", error);
-      }
-    });
-  }
-  send(message) {
-    const line = JSON.stringify(message);
-    if (Buffer.byteLength(line, "utf8") > MAX_FRAME_BYTES) {
-      throw new Error("Outbound JSON-RPC frame exceeded 16 MiB");
-    }
-    process.stdout.write(`${line}
-`);
-  }
-  async handle(message) {
-    if (!message.method) {
-      const pending = message.id === undefined ? undefined : this.pending.get(message.id);
-      if (!pending || message.id === undefined)
-        return;
-      this.pending.delete(message.id);
-      if (message.error) {
-        pending.reject(new Error(message.error.message ?? "Kit request failed"));
-      } else {
-        pending.resolve(message.result);
-      }
-      return;
-    }
-    if (message.method === "kit/cancel") {
-      const id2 = message.params?.id;
-      if (typeof id2 === "string" || typeof id2 === "number") {
-        this.activeRequests.get(id2)?.abort();
-      }
-      return;
-    }
-    if (message.id === undefined) {
-      const handler = this.notificationHandlers.get(message.method);
-      if (handler) {
-        try {
-          await handler(message.params ?? {});
-        } catch (error) {
-          console.error(`Notification ${message.method} failed:`, error);
-        }
-      }
-      return;
-    }
-    const id = message.id;
-    const controller = new AbortController;
-    this.activeRequests.set(id, controller);
-    try {
-      if (message.method === "initialize") {
-        if (this.initialized || !this.initializeHandler) {
-          throw new Error("Unsupported initialization");
-        }
-        const params = message.params ?? {};
-        const result2 = await this.initializeHandler(params);
-        this.send({ jsonrpc: "2.0", id, result: result2 });
-        this.initialized = true;
-        await this.afterInitializeHandler?.(params);
-        return;
-      }
-      if (message.method === "shutdown") {
-        this.stopping = true;
-        await this.shutdownHandler?.();
-        this.send({ jsonrpc: "2.0", id, result: null });
-        this.input?.close();
-        return;
-      }
-      const handler = this.handlers.get(message.method);
-      if (!handler) {
-        this.send({
-          jsonrpc: "2.0",
-          id,
-          error: { code: -32601, message: "Method not found" }
-        });
-        return;
-      }
-      const result = await handler(message.params ?? {}, controller.signal);
-      if (controller.signal.aborted) {
-        this.send({
-          jsonrpc: "2.0",
-          id,
-          error: { code: -32001, message: "Request cancelled" }
-        });
-      } else {
-        this.send({ jsonrpc: "2.0", id, result: result ?? null });
-      }
-    } catch (error) {
-      console.error(`${message.method} failed:`, error);
-      this.send({
-        jsonrpc: "2.0",
-        id,
-        error: {
-          code: -32000,
-          message: error instanceof Error ? error.message : String(error)
-        }
-      });
-    } finally {
-      this.activeRequests.delete(id);
-    }
+    return;
   }
 }
+function node(schema) {
+  return { schema };
+}
+function clean(options) {
+  const result = {};
+  for (const [key, value] of Object.entries(options ?? {})) {
+    if (value !== undefined)
+      result[key] = value;
+  }
+  return result;
+}
+var t = {
+  string: (options) => node({ type: "string", ...clean(options) }),
+  number: (options) => node({ type: "number", ...clean(options) }),
+  integer: (options) => node({ type: "integer", ...clean(options) }),
+  boolean: (options) => node({ type: "boolean", ...clean(options) }),
+  null: (options) => node({ type: "null", ...clean(options) }),
+  enum: (values, options) => node({ enum: [...values], ...clean(options) }),
+  literal: (value, options) => node({ const: value, ...clean(options) }),
+  array: (items, options) => node({ type: "array", items: items.schema, ...clean(options) }),
+  object: (properties, options) => {
+    const required = Object.keys(properties).filter((name) => !("optional" in properties[name]));
+    const schemas = Object.create(null);
+    for (const [name, property] of Object.entries(properties))
+      schemas[name] = property.schema;
+    const { additionalProperties = false, ...rest } = clean(options);
+    return node({ type: "object", properties: schemas, required, additionalProperties, ...rest });
+  },
+  union: (schemas, options) => node({ anyOf: schemas.map((schema) => schema.schema), ...clean(options) }),
+  nullable: (schema) => node({ anyOf: [schema.schema, { type: "null" }] }),
+  optional: (schema) => ({ schema: schema.schema, optional: true }),
+  raw: (schema) => node(schema)
+};
+var events = {
+  "kit/events/session.changed": "session.changed",
+  "kit/events/project.changed": "project.changed",
+  "kit/events/git.changed": "git.changed",
+  "kit/events/agent.turn.started": "turn.started",
+  "kit/events/agent.turn.completed": "turn.completed"
+};
+function describe(error) {
+  if (error instanceof Error)
+    return error.stack ?? `${error.name}: ${error.message}`;
+  return String(error);
+}
+function segments(content) {
+  const list = typeof content === "string" || !Array.isArray(content) ? [content] : content;
+  return list.map((part) => typeof part === "string" ? { text: part } : part);
+}
+function connect(setup, io) {
+  let initialized = false;
+  let stopping;
+  let dispose;
+  let info;
+  let session = { id: "", name: null };
+  let project = { cwd: "", git: null };
+  let nextId = 0;
+  let markReady = () => {};
+  const ready = new Promise((resolve) => {
+    markReady = resolve;
+  });
+  let setupDone = Promise.resolve();
+  const working = new Set;
+  const track = (work) => {
+    working.add(work);
+    work.then(() => working.delete(work), () => working.delete(work));
+    return work;
+  };
+  const pending = new Map;
+  const active = new Map;
+  const commands = new Map;
+  const tools = new Map;
+  let interceptor;
+  const listeners = new Map;
+  const keyOf = (id) => JSON.stringify(id);
+  const send = (message) => io.write(`${JSON.stringify({ jsonrpc: "2.0", ...message })}
+`);
+  function request(method, params, options) {
+    if (!initialized)
+      return Promise.reject(new Error(`${method} sent before Kit initialized the plugin`));
+    if (stopping)
+      return Promise.reject(new KitError(ErrorCode.Unavailable, "The plugin is stopping"));
+    const signal = options?.signal;
+    if (signal?.aborted)
+      return Promise.reject(signal.reason);
+    const id = `plugin-${++nextId}`;
+    return new Promise((resolve, reject) => {
+      const onAbort = () => {
+        if (!pending.delete(keyOf(id)))
+          return;
+        send({ method: "kit/cancel", params: { id } });
+        reject(signal?.reason);
+      };
+      pending.set(keyOf(id), {
+        resolve: (value) => {
+          signal?.removeEventListener("abort", onAbort);
+          resolve(value);
+        },
+        reject: (error) => {
+          signal?.removeEventListener("abort", onAbort);
+          reject(error);
+        }
+      });
+      signal?.addEventListener("abort", onAbort, { once: true });
+      send(params === undefined ? { id, method } : { id, method, params });
+    });
+  }
+  function notify(method, params) {
+    if (initialized)
+      send({ method, params });
+  }
+  function dialogs(parentId) {
+    const parent = parentId === undefined ? {} : { parentId };
+    return {
+      confirm: (options, signal) => request("kit/ui/confirm", { ...options, ...parent }, signal),
+      input: (options, signal) => request("kit/ui/input", { ...options, ...parent }, signal),
+      select: async (options, signal) => {
+        const answer2 = await request("kit/ui/select", { ...options, options: [...options.options], ...parent }, signal);
+        return answer2;
+      }
+    };
+  }
+  function report(error) {
+    io.log(`${describe(error)}
+`);
+    const message = error instanceof Error ? error.message : String(error);
+    notify("kit/ui/toast", { title: "Plugin error", subtitle: message.slice(0, 4096), variant: "error" });
+  }
+  const kit = {
+    get version() {
+      return info?.kit.version ?? "";
+    },
+    get instanceId() {
+      return info?.instance.id ?? "";
+    },
+    session: {
+      get id() {
+        return session.id;
+      },
+      get name() {
+        return session.name;
+      },
+      submitMessage: (text, options) => request("kit/session/submit-message", options?.idempotencyKey === undefined ? { text } : { text, idempotencyKey: options.idempotencyKey }, options)
+    },
+    get project() {
+      return project;
+    },
+    commands: {
+      async register(command, options) {
+        const { execute: _, ...params } = command;
+        const restore = install(commands, command.id, command);
+        try {
+          const { id } = await request("kit/commands/register", params, options);
+          return handle(id, command.id, "kit/commands/unregister", () => {
+            if (commands.get(command.id) === command)
+              commands.delete(command.id);
+          });
+        } catch (error) {
+          restore();
+          throw error;
+        }
+      }
+    },
+    tools: {
+      async register(tool, options) {
+        const { execute: _, input, ...rest } = tool;
+        const definition = tool;
+        const restore = install(tools, tool.id, definition);
+        try {
+          const result = await request("kit/tools/register", { ...rest, inputSchema: input.schema }, options);
+          const removed = handle(result.id, tool.id, "kit/tools/unregister", () => {
+            if (tools.get(tool.id) === definition)
+              tools.delete(tool.id);
+          });
+          return { ...removed, modelName: result.modelName };
+        } catch (error) {
+          restore();
+          throw error;
+        }
+      }
+    },
+    interceptor: {
+      async register(next, options) {
+        const previous = interceptor;
+        interceptor = next;
+        try {
+          await request("kit/tool-calls/register-interceptor", undefined, options);
+        } catch (error) {
+          if (interceptor === next)
+            interceptor = previous;
+          throw error;
+        }
+        return {
+          async unregister(request_) {
+            if (interceptor !== next)
+              return;
+            await request("kit/tool-calls/unregister-interceptor", undefined, request_);
+            if (interceptor === next)
+              interceptor = undefined;
+          }
+        };
+      }
+    },
+    subagents: {
+      async register(subagent, options) {
+        const { id } = await request("kit/subagents/register", subagent, options);
+        return handle(id, subagent.id, "kit/subagents/unregister");
+      }
+    },
+    footer: {
+      async set(localId, content, options) {
+        const { id } = await request("kit/footer/set", { id: localId, content: segments(content) }, options);
+        return {
+          id,
+          localId,
+          set: async (next, again) => {
+            await request("kit/footer/set", { id: localId, content: segments(next) }, again);
+          },
+          clear: (again) => request("kit/footer/clear", { id: localId }, again).then(() => {})
+        };
+      },
+      clear: (id, options) => request("kit/footer/clear", { id }, options).then(() => {}),
+      hide: (target, options) => request("kit/footer/hide", { id: target }, options).then(() => {}),
+      show: (target, options) => request("kit/footer/show", { id: target }, options).then(() => {})
+    },
+    ui: {
+      ...dialogs(),
+      toast: (toast) => notify("kit/ui/toast", { variant: "info", ...toast })
+    },
+    system: {
+      openUrl: (url, options) => request("kit/system/open-url", { url }, options).then(() => {})
+    },
+    on(event, listener) {
+      const set = listeners.get(event) ?? new Set;
+      listeners.set(event, set);
+      const entry = listener;
+      set.add(entry);
+      return () => {
+        set.delete(entry);
+      };
+    }
+  };
+  function install(handlers, id, value) {
+    const previous = handlers.get(id);
+    handlers.set(id, value);
+    return () => {
+      if (handlers.get(id) !== value)
+        return;
+      if (previous === undefined)
+        handlers.delete(id);
+      else
+        handlers.set(id, previous);
+    };
+  }
+  function handle(id, localId, method, removed) {
+    return {
+      id,
+      localId,
+      async unregister(options) {
+        await request(method, { id: localId }, options);
+        removed?.();
+      }
+    };
+  }
+  async function runSetup() {
+    try {
+      const disposer = await setup(kit);
+      if (typeof disposer === "function")
+        dispose = disposer;
+    } catch (error) {
+      if (!stopping) {
+        io.log(`Plugin setup failed: ${describe(error)}
+`);
+        io.exit(1);
+      }
+    } finally {
+      markReady();
+    }
+  }
+  function stop() {
+    stopping ??= (async () => {
+      for (const controller of active.values())
+        controller.abort(new KitError(ErrorCode.Cancelled, "The plugin is stopping"));
+      for (const [id, waiting] of pending) {
+        pending.delete(id);
+        waiting.reject(new KitError(ErrorCode.Unavailable, "The plugin is stopping"));
+      }
+      let timer;
+      await Promise.race([setupDone, new Promise((resolve) => timer = setTimeout(resolve, SETUP_STOP_GRACE_MS))]);
+      clearTimeout(timer);
+      try {
+        await dispose?.();
+      } catch (error) {
+        io.log(`Plugin disposer failed: ${describe(error)}
+`);
+      }
+    })();
+    return stopping;
+  }
+  async function serve(id, method, params) {
+    const context = (controller2) => ({ signal: controller2.signal, ui: dialogs(id) });
+    const controller = new AbortController;
+    switch (method) {
+      case "kit/commands/execute": {
+        const { id: local, args } = params;
+        const command = commands.get(local);
+        if (!command)
+          throw new KitError(ErrorCode.Failed, `Unknown command: ${local}`);
+        active.set(keyOf(id), controller);
+        await command.execute(args, context(controller));
+        return null;
+      }
+      case "kit/tools/execute": {
+        const { id: local, toolCallId, input } = params;
+        const tool = tools.get(local);
+        if (!tool)
+          throw new KitError(ErrorCode.Failed, `Unknown tool: ${local}`);
+        active.set(keyOf(id), controller);
+        const outcome = await tool.execute(input, { ...context(controller), toolCallId });
+        return typeof outcome === "string" ? { content: [{ type: "text", text: outcome }] } : outcome;
+      }
+      case "kit/tool-calls/before-execute": {
+        const current = interceptor;
+        if (!current)
+          throw new KitError(ErrorCode.Failed, "The plugin has no interceptor");
+        active.set(keyOf(id), controller);
+        const decision = await current(params.toolCall, context(controller));
+        if (decision === "allow")
+          return { action: "allow" };
+        return { action: "reject-and-continue", message: decision.reject };
+      }
+    }
+    throw new Error(`Unexpected method ${method}`);
+  }
+  const served = new Set(["kit/commands/execute", "kit/tools/execute", "kit/tool-calls/before-execute"]);
+  async function answer(id, method, params) {
+    if (method === "initialize") {
+      const init = params;
+      if (initialized || init?.protocolVersion !== PROTOCOL_VERSION) {
+        send({ id, error: { code: ErrorCode.Failed, message: `Unsupported protocol version ${init?.protocolVersion}` } });
+        return;
+      }
+      info = init;
+      session = init.context.session;
+      project = init.context.project;
+      initialized = true;
+      send({ id, result: { protocolVersion: PROTOCOL_VERSION } });
+      setupDone = runSetup();
+      await setupDone;
+      return;
+    }
+    if (method === "shutdown") {
+      await stop();
+      send({ id, result: null });
+      io.exit(0);
+      return;
+    }
+    if (!served.has(method)) {
+      send({ id, error: { code: ErrorCode.MethodNotFound, message: `Method not found: ${method}` } });
+      return;
+    }
+    try {
+      const result = await serve(id, method, params);
+      const cancelled = active.get(keyOf(id))?.signal.aborted;
+      send(cancelled ? { id, error: { code: ErrorCode.Cancelled, message: "Cancelled" } } : { id, result });
+    } catch (error) {
+      const cancelled = active.get(keyOf(id))?.signal.aborted;
+      const code = cancelled ? ErrorCode.Cancelled : ErrorCode.Failed;
+      const message = error instanceof Error ? error.message : String(error);
+      send({ id, error: { code, message: message || "Failed" } });
+    } finally {
+      active.delete(keyOf(id));
+    }
+  }
+  function observe(method, params) {
+    if (method === "kit/cancel") {
+      active.get(keyOf(params?.id))?.abort(new KitError(ErrorCode.Cancelled, "Kit cancelled the request"));
+      return;
+    }
+    const event = events[method];
+    if (!event)
+      return;
+    if (event === "session.changed")
+      session = params;
+    if (event === "project.changed")
+      project = params;
+    if (event === "git.changed")
+      project = { ...project, git: params.git };
+    for (const listener of [...listeners.get(event) ?? []]) {
+      track(Promise.resolve().then(() => listener(params)).catch(report));
+    }
+  }
+  function receive(line) {
+    if (!line.trim())
+      return;
+    let message;
+    try {
+      message = JSON.parse(line);
+    } catch {
+      io.log(`Ignoring a line from Kit that is not JSON: ${line.slice(0, 200)}
+`);
+      return;
+    }
+    if (!message || typeof message !== "object" || Array.isArray(message))
+      return;
+    if (typeof message.method === "string") {
+      if (message.id === undefined || message.id === null)
+        observe(message.method, message.params);
+      else
+        answer(message.id, message.method, message.params);
+      return;
+    }
+    const waiting = pending.get(keyOf(message.id));
+    if (!waiting)
+      return;
+    pending.delete(keyOf(message.id));
+    if (message.error) {
+      const { code, message: text, data } = message.error;
+      waiting.reject(new KitError(typeof code === "number" ? code : ErrorCode.InternalError, String(text ?? "Kit request failed"), data));
+    } else {
+      waiting.resolve(message.result);
+    }
+  }
+  return {
+    receive,
+    close() {
+      stop().then(() => io.exit(0));
+    },
+    report,
+    ready,
+    async idle() {
+      while (working.size > 0)
+        await Promise.allSettled([...working]);
+    }
+  };
+}
+function runPlugin(setup) {
+  const host = globalThis.process;
+  const protocol = host.stdout.write.bind(host.stdout);
+  const diagnostics = host.stderr.write.bind(host.stderr);
+  host.stdout.write = (chunk, ...rest) => diagnostics(chunk, ...rest);
+  for (const name of ["log", "info", "debug", "dir", "table"]) {
+    console[name] = (...args) => console.error(...args);
+  }
+  const connection = connect(setup, {
+    write: (line) => {
+      protocol(line);
+    },
+    log: (text) => {
+      diagnostics(text);
+    },
+    exit: (code) => {
+      protocol("", () => host.exit(code));
+    }
+  });
+  host.on("unhandledRejection", (reason) => connection.report(reason));
+  let buffered = "";
+  host.stdin.setEncoding("utf8");
+  host.stdin.on("data", (chunk) => {
+    buffered += chunk;
+    for (let newline = buffered.indexOf(`
+`);newline >= 0; newline = buffered.indexOf(`
+`)) {
+      const line = buffered.slice(0, newline).replace(/\r$/, "");
+      buffered = buffered.slice(newline + 1);
+      connection.receive(line);
+    }
+  });
+  host.stdin.on("end", () => connection.close());
+}
+var ErrorCode = {
+  ParseError: -32700,
+  InvalidRequest: -32600,
+  MethodNotFound: -32601,
+  InvalidParams: -32602,
+  InternalError: -32603,
+  Failed: -32000,
+  Cancelled: -32001,
+  Unavailable: -32002,
+  Conflict: -32003,
+  LimitExceeded: -32005,
+  TryLater: -32006
+};
 
 // plugin.ts
 var import_googleapis = __toESM(require_src8(), 1);
@@ -699534,7 +699887,6 @@ var Schema = {
     };
   }
 };
-var endpoint = new KitPluginEndpoint;
 var commands = new Map;
 var tools = new Map;
 function registerCommand(id, options, handler) {
@@ -699543,20 +699895,14 @@ function registerCommand(id, options, handler) {
 function registerTool(definition) {
   tools.set(definition.name, definition);
 }
-function toast(input) {
-  endpoint.toast(input.title, input.variant, input.subtitle);
-}
-function commandContext(args) {
+function commandContext(kit, args, ui) {
   return {
     args,
     ui: {
-      toast,
-      async confirm(input) {
-        return await endpoint.request("kit/ui/confirm", input) === true;
-      },
+      toast: (input) => kit.ui.toast(input),
+      confirm: (input) => ui.confirm(input),
       async input(input) {
-        const result = await endpoint.request("kit/ui/input", input);
-        return typeof result === "string" ? result : undefined;
+        return await ui.input(input) ?? undefined;
       }
     }
   };
@@ -700509,44 +700855,30 @@ registerTool({
     throw new Error(`NOTE ${params.note_number} not found`);
   }
 });
-endpoint.onInitialize((params) => {
-  if (params.protocolVersion !== 1)
-    throw new Error("Unsupported protocol version");
-  return { protocolVersion: 1 };
-}, async () => {
+async function setup(kit) {
   for (const command of commands.values()) {
-    await endpoint.request("kit/commands/register", {
+    await kit.commands.register({
       id: command.id,
       description: command.description,
-      category: "Google Drive"
+      category: "Google Drive",
+      execute: (args, { ui }) => command.handler(commandContext(kit, args, ui))
     });
   }
   for (const tool of tools.values()) {
-    await endpoint.request("kit/tools/register", {
+    await kit.tools.register({
       id: tool.name,
       label: tool.label ?? tool.name,
       description: tool.description,
-      inputSchema: tool.parameters,
+      input: t.raw(tool.parameters),
       executionMode: "sequential",
       ...tool.promptSnippet ? { promptSnippet: tool.promptSnippet } : {},
-      ...tool.promptGuidelines ? { promptGuidelines: tool.promptGuidelines } : {}
+      ...tool.promptGuidelines ? { promptGuidelines: tool.promptGuidelines } : {},
+      execute: (input, { toolCallId }) => tool.execute(toolCallId, input)
     });
   }
-});
-endpoint.onRequest("kit/commands/execute", async (params) => {
-  const id = typeof params.id === "string" ? params.id : "";
-  const command = commands.get(id);
-  if (!command)
-    throw new Error(`Unknown Google Drive command: ${id}`);
-  await command.handler(commandContext(typeof params.args === "string" ? params.args : ""));
-  return null;
-});
-endpoint.onRequest("kit/tools/execute", async (params) => {
-  const id = typeof params.id === "string" ? params.id : "";
-  const tool = tools.get(id);
-  if (!tool)
-    throw new Error(`Unknown Google Drive tool: ${id}`);
-  const input = params.input && typeof params.input === "object" ? params.input : {};
-  return tool.execute(typeof params.toolCallId === "string" ? params.toolCallId : "", input);
-});
-endpoint.start();
+}
+if (import.meta.main)
+  runPlugin(setup);
+export {
+  setup
+};
