@@ -1018,7 +1018,7 @@ function commandContext(kit: Kit, args: string, ui: Dialogs): CommandContext {
 					style.foregroundColor = {
 						color: {
 							rgbColor:
-								ts.foregroundColor as docs_v1.Schema$Color,
+								ts.foregroundColor as docs_v1.Schema$RgbColor,
 						},
 					};
 					fields.push("foregroundColor");
@@ -1027,7 +1027,7 @@ function commandContext(kit: Kit, args: string, ui: Dialogs): CommandContext {
 					style.backgroundColor = {
 						color: {
 							rgbColor:
-								ts.backgroundColor as docs_v1.Schema$Color,
+								ts.backgroundColor as docs_v1.Schema$RgbColor,
 						},
 					};
 					fields.push("backgroundColor");
