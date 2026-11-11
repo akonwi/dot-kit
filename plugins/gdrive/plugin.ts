@@ -886,7 +886,7 @@ function commandContext(kit: Kit, args: string, ui: Dialogs): CommandContext {
 			textStyle: Schema.Optional(
 				Schema.Unknown({
 					description:
-						"Text style: {bold, italic, underline, strikethrough, fontSize, foregroundColor, backgroundColor, link}",
+						"Text style: {bold, italic, underline, strikethrough, fontSize, foregroundColor, backgroundColor, link}. fontSize is in points. foregroundColor and backgroundColor are {red, green, blue}, each from 0 to 1 (e.g. {red: 1, green: 0, blue: 0} for red). link is {url}.",
 				}),
 			),
 			paragraphStyle: Schema.Optional(
