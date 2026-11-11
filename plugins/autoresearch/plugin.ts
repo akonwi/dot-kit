@@ -133,6 +133,11 @@ type AutoresearchRuntime = {
 	state: ExperimentState;
 	/** A kickoff rejected while the session was busy, submitted when the turn completes. */
 	pendingKickoff: string | null;
+	/** The user stopped the loop; only `/autoresearch <goal>` starts it again. */
+	stoppedByUser: boolean;
+	/** Bumped by every goal, off, and clear command, so a command that resumes
+	 * after an await can tell that a later one superseded it. */
+	activation: number;
 	glimpse: GlimpseState;
 };
 
@@ -212,6 +217,8 @@ function createRuntime(): AutoresearchRuntime {
 		runningExperiment: null,
 		state: createExperimentState(),
 		pendingKickoff: null,
+		stoppedByUser: false,
+		activation: 0,
 		glimpse: { windowName: null, windowOpen: false, lastUpdateAt: 0, busy: false },
 	};
 }
@@ -923,7 +930,6 @@ export async function setup(kit: Kit) {
 			try {
 				runtime.state = reconstructStateFromJsonl(fs.readFileSync(jsonlPath, "utf8"));
 				runtime.state.maxExperiments = readMaxExperiments(cwd);
-				runtime.autoresearchMode = true;
 			} catch {
 				// Keep empty state if reconstruction fails.
 			}
@@ -973,6 +979,8 @@ export async function setup(kit: Kit) {
 
 			if (command === "off") {
 				runtime.autoresearchMode = false;
+				runtime.stoppedByUser = true;
+				runtime.activation += 1;
 				runtime.experimentsThisSession = 0;
 				runtime.lastRunChecks = null;
 				runtime.lastRunDuration = null;
@@ -998,6 +1006,8 @@ export async function setup(kit: Kit) {
 				const workDir = resolveWorkDir(kit.project.cwd);
 				const jsonlPath = autoresearchJsonlPath(workDir);
 				runtime.autoresearchMode = false;
+				runtime.stoppedByUser = true;
+				runtime.activation += 1;
 				runtime.experimentsThisSession = 0;
 				runtime.lastRunChecks = null;
 				runtime.lastRunDuration = null;
@@ -1013,7 +1023,9 @@ export async function setup(kit: Kit) {
 
 			reconstructRuntime(runtime, kit.project.cwd);
 			runtime.autoresearchMode = true;
+			runtime.stoppedByUser = false;
 			runtime.pendingKickoff = null;
+			const activation = ++runtime.activation;
 			const workDir = resolveWorkDir(kit.project.cwd);
 			const rulesLoaded = fs.existsSync(autoresearchMdPath(workDir));
 			const activationSteer = await runHook({
@@ -1023,6 +1035,9 @@ export async function setup(kit: Kit) {
 				last_run: readLastRun(workDir),
 				session: buildSessionSnapshot(runtime.state),
 			});
+			// The hook can take up to 30 s; the user may have stopped or restarted
+			// autoresearch meanwhile.
+			if (runtime.activation !== activation) return;
 			const kickoff = rulesLoaded
 				? `Autoresearch mode active. ${trimmedArgs} ${BENCHMARK_GUARDRAIL}`
 				: `Start autoresearch: ${trimmedArgs} ${BENCHMARK_GUARDRAIL}`;
@@ -1040,6 +1055,7 @@ export async function setup(kit: Kit) {
 			try {
 				await kit.session.submitMessage(message);
 			} catch (error) {
+				if (runtime.activation !== activation) return;
 				if (!isTryLater(error, "session_busy")) {
 					warnSubmissionFailed(error);
 					return;
@@ -1093,15 +1109,19 @@ export async function setup(kit: Kit) {
 				bestDirection: state.bestDirection,
 			});
 			fs.appendFileSync(autoresearchJsonlPath(workDir), `${config}\n`);
-			runtime.autoresearchMode = true;
+			// The skill starts the loop here, but not after the user stopped it.
+			if (!runtime.stoppedByUser) runtime.autoresearchMode = true;
 			updateFooter(kit, runtime);
+			const stoppedNote = runtime.stoppedByUser
+				? "\nAutoresearch is off: the user stopped it. Do not continue the loop; they can resume it with /autoresearch <goal>."
+				: "";
 			const limitNote = state.maxExperiments !== null ? `\nMax iterations: ${state.maxExperiments}` : "";
 			const workDirNote = workDir !== cwd ? `\nWorking directory: ${workDir}` : "";
 			return {
 				content: [
 					{
 						type: "text",
-						text: `✅ Experiment initialized: "${state.name}"${isReinit ? " (new segment)" : ""}\nMetric: ${state.metricName} (${state.metricUnit || "unitless"}, ${state.bestDirection} is better)${limitNote}${workDirNote}\nConfig written to autoresearch.jsonl. Now run the baseline with autoresearch__run_experiment.`,
+						text: `✅ Experiment initialized: "${state.name}"${isReinit ? " (new segment)" : ""}\nMetric: ${state.metricName} (${state.metricUnit || "unitless"}, ${state.bestDirection} is better)${limitNote}${workDirNote}\nConfig written to autoresearch.jsonl.${stoppedNote || " Now run the baseline with autoresearch__run_experiment."}`,
 					},
 				],
 				details: { state: cloneState(state) },
@@ -1390,7 +1410,7 @@ export async function setup(kit: Kit) {
 				runtime,
 				kit.session.id,
 				workDir,
-				{ final: limitReached },
+				{ final: limitReached || runtime.stoppedByUser },
 				{ force: true },
 			);
 			return {

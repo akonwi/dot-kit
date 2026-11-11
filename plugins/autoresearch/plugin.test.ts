@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, realpathSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { KitError, ErrorCode } from "./kit-plugin.ts";
@@ -93,3 +93,68 @@ test("clear deletes the log and the footer item", async () => {
   expect(existsSync(path.join(cwd, "autoresearch.jsonl"))).toBe(false);
   expect(kit.footer.size).toBe(0);
 });
+
+const completeTurn = (id: string) => kit.emit("turn.completed", { sessionId: "session-test", turn: { id, messages: [] } });
+const resumes = () => kit.messages.filter((message) => message.text.includes("Run the next autoresearch iteration now.")).length;
+
+async function startThenStop() {
+  await kit.runCommand("autoresearch", "make it faster");
+  await kit.callTool("init_experiment", { name: "Speed", metric_name: "total_ms" });
+  await kit.callTool("log_experiment", { commit: "a", metric: 12, status: "keep", description: "Baseline" });
+  await kit.runCommand("autoresearch", "off");
+}
+
+test("after off, a rename or cwd change does not restart the loop", async () => {
+  await startThenStop();
+  // The turn that was running when the user stopped it logs one more experiment.
+  await kit.callTool("log_experiment", { commit: "b", metric: 11, status: "keep", description: "In flight" });
+  await completeTurn("turn_1");
+  await kit.emit("session.changed", { id: "session-test", name: "Renamed" });
+  await kit.emit("project.changed", { cwd, git: null });
+  await completeTurn("turn_2");
+  expect(resumes()).toBe(0);
+});
+
+test("after off, init_experiment does not restart the loop and says so", async () => {
+  await startThenStop();
+  const result = text(await kit.callTool("init_experiment", { name: "Speed", metric_name: "total_ms" }));
+  expect(result).toContain("Autoresearch is off: the user stopped it.");
+  await kit.callTool("log_experiment", { commit: "b", metric: 11, status: "keep", description: "Again" });
+  await completeTurn("turn_1");
+  expect(resumes()).toBe(0);
+});
+
+test("the goal command restarts the loop after off", async () => {
+  await startThenStop();
+  await kit.runCommand("autoresearch", "make it faster still");
+  await kit.callTool("log_experiment", { commit: "b", metric: 11, status: "keep", description: "Resumed" });
+  await completeTurn("turn_1");
+  expect(resumes()).toBe(1);
+});
+
+test("init_experiment starts the loop without the command, as the skill does", async () => {
+  await kit.callTool("init_experiment", { name: "Speed", metric_name: "total_ms" });
+  await kit.callTool("log_experiment", { commit: "a", metric: 12, status: "keep", description: "Baseline" });
+  await completeTurn("turn_1");
+  expect(resumes()).toBe(1);
+});
+
+test("off while the goal command waits for its before hook cancels the kickoff", async () => {
+  // A before hook that runs until the test removes its gate file.
+  const gate = path.join(cwd, "hook-gate");
+  writeFileSync(gate, "");
+  mkdirSync(path.join(cwd, "autoresearch.hooks"));
+  const hook = path.join(cwd, "autoresearch.hooks", "before.sh");
+  writeFileSync(hook, `#!/bin/bash\nwhile [ -e ${JSON.stringify(gate)} ]; do sleep 0.02; done\n`);
+  chmodSync(hook, 0o755);
+
+  const starting = kit.runCommand("autoresearch", "make it faster");
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  await kit.runCommand("autoresearch", "off");
+  rmSync(gate);
+  await starting;
+  await completeTurn("turn_1");
+  expect(kit.messages).toEqual([]);
+  expect(kit.toasts.map((toast) => toast.title)).not.toContain("Autoresearch mode ON");
+});
+
