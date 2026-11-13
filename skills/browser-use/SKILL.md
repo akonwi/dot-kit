@@ -3,6 +3,9 @@ name: browser-use
 description: Read when you need a browser automation (QA, element interaction, screencapture/snapshot, network capture, so on), or have to work across user's logged-in accounts, and apps (e.g. Slack, X, LinkedIn, etc.).
 ---
 
+Prefer to use the browser tools available to you because they should be in-app. If there are no available browser tools, you can look for Aside (see below) or use the `agent-browser` cli, if available.
+If none of these are available report to the user.
+
 # Aside Browser
 
 Aside is an AI browser. Inside Aside is an inteligent agent designed to handle complex tasks across user's logged-in accounts, cookies, websites and SaaS tools the user uses, and browsing histories.
