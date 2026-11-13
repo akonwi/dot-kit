@@ -19,3 +19,6 @@ Notes:
 - Default range syncs notes created this week.
 - Pass `--range` to sync notes created in the last 30 days.
 - Pass `--query "..."` to filter notes before syncing.
+- Granola transcripts are fetched after reconciliation when no Monologue or archived transcript is available; downloads are cached locally.
+- To fill historical transcript gaps beyond the normal date window, run `bun run ~/.kit/meeting-sync/backfill-transcripts.ts` (supports `--dry-run` and `--limit N`).
+- Do not run normal sync concurrently with a transcript backfill.
