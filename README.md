@@ -22,6 +22,22 @@ and machine-specific plugins can live beside the portable links.
 The installer refuses to replace existing local files or foreign symlinks.
 Set `KIT_HOME` to install into a non-default Kit directory.
 
+### Copies instead of links
+
+An entry can also be installed as an independent copy, so it can be edited
+locally without changing the repository. Copies don't follow the repository,
+so after pulling, bring them up to date:
+
+```sh
+./sync-installed.sh            # report outdated, modified, and removed copies
+./sync-installed.sh --apply    # update copies that match an earlier repo version
+```
+
+A copy is updated only when it exactly matches a version this repository once
+had, so local edits are reported, never overwritten. Gitignored runtime files
+are left alone. `--since REV` also lists entries added since `REV` that aren't
+installed. Symlinked entries are skipped.
+
 ### Project install
 
 Pass `--project DIR` to link entries into a project's Kit config instead of
